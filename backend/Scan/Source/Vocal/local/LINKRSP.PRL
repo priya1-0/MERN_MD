@@ -1,0 +1,163 @@
+#!/usr/bin/perl
+
+#use vocal;
+BEGIN {
+	push (@INC, "local", "../local"); # where to find vocal.pm
+			require vocal; import vocal;
+}
+
+undef $/; # slurp entire files
+
+$borland = 0;
+$mc      = 0;
+$quote   = 0;
+$do_cmd  = 0;
+$do_ordered  = 0;
+
+while ($arg = shift) {
+	if ($arg =~ m/^\-(\S*)/) {
+		$opt = $1;
+
+		if ($opt eq "o") {
+			$output_file = shift;
+		}
+		elsif ($opt eq "b") {
+			$borland = 1;
+		}
+		elsif ($opt eq "mc") {
+			$mc = 1;
+		}
+		elsif ($opt eq "q") {
+			$quote = 1;
+		}
+
+		elsif($opt eq "cmd"){
+			$do_cmd = 1;
+		}
+		elsif($opt eq "arc"){
+			$do_arc = 1;
+			$path = shift;
+		}
+#		elsif($opt eq "i"){
+#			$do_ignore_list = 1;
+#			$ignorefile = shift;
+#		}
+		elsif($opt eq "ordered"){
+			$do_ordered = 1;
+		}
+
+		else {
+			print "\n\nWARNING: unrecognized flag\n\n"
+		}
+	}
+	else {
+		$infile = $arg;
+	}
+}
+
+open (INFILE, $infile);
+$contents = <INFILE>;
+close (INFILE);
+
+&load_options_file ("include/options.h");
+&load_options_file ("include/reconfig.h");
+&load_options_file ("include/test.h");
+&set_options ("notdef",			"u",
+			  "NOTDEF",			"u",
+			  "NOT_USED",		"u");
+&strip ($contents, "ii", "uu");
+
+$in_ordered_group = 0;
+
+if($do_cmd == 0){
+
+	$contents =~ s!/\*.*?\*/!!g;
+	$contents =~ s!\s*\n\s*!\n!g;
+
+	@lines = split (/\n/, $contents);
+	$contents = "";
+	if($do_arc == 1) {
+		$prefix = "$path/";
+	} else {
+		$prefix = "";
+	}
+	foreach $line (@lines) {
+
+		if ($line =~ m/^link/) {			
+			$line =~ s(\\)(/)g;
+			$line =~ s(\.[c]$)(.obj)g;
+			$line =~ s(\.[Ss]$)(.o)g;
+
+			if ($line =~ m/mpeg4bf\/slaveencoder/) {
+				next;
+			}
+			
+			if (($mc == 1) || ($quote == 1)) {
+				$contents .= "${prefix}\"${line}\"";
+			}
+			else {
+				$contents .= "${prefix}${line}";
+			}
+			if($do_arc == 1) {
+				$prefix = "\n$path/";
+			} else {
+				$prefix = "\n";
+			}
+		}
+
+	}
+
+	if ($borland == 1) {
+		$contents =~ s!\/!\\!g;
+		$contents =~ s!\n!+\n!g;
+	}
+
+	$output_file = "arch/mst_link.rsp" unless $output_file;
+}
+# this else is for $do_cmd == 1
+else{
+	$contents =~ s!\n\/\/.*\n!\n!g;		# replace "\n//.*\n" with "\n"
+			   $contents =~ s!\/\/.*\n!\n!g;		# replace "//.*\n" with "\n"
+						  $contents =~ s!/\*-[^\*]*-\*/!!gs;
+#	$contents =~ s!\s*\n\s*!\n!g;
+
+
+	if ($do_ordered  == 1) {
+
+		@lines = split (/\n/, $contents);
+		$contents = "";
+
+		foreach $line (@lines) {
+
+			if ($line =~ s/ORDERED/GROUP/) {
+				$in_ordered_group = 1;
+			}
+
+			if ($in_ordered_group == 1) {
+				if ($line =~ m/}/) {
+					$in_ordered_group = 0;
+				} elsif ($line =~ m/"link\/(.*)\.obj/) {
+					$sect_name = $1;
+					$sect_name =~ s/\//_/g;
+					$tmp_line = $line;
+					$line = ".$sect_name { $tmp_line }\n";
+				}
+			}
+			$contents .= "${line}\n";
+
+		}
+	}
+	$output_file = "arch/mst_link.tmp" unless $output_file;
+}
+
+
+open (OUTPUT_FILE, ">$output_file");
+if ($mc) {
+	print OUTPUT_FILE "INPUT (\n";
+}
+print OUTPUT_FILE $contents;
+if ($mc) {
+	print OUTPUT_FILE "\n)";
+}
+print OUTPUT_FILE "\n";
+close (OUTPUT_FILE);

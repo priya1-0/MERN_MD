@@ -1,0 +1,122 @@
+# dataproc.prl
+# input param1:	$outputfile		- databld.h
+# input param2-n:	$datalist_file	- usually data\*.src files
+
+# creates databld.h - which is a struct containing all variables in all the src files
+# attempt to match variations <dtype> (A,B[,C]) including
+#	<dtype> (A,B,[#])
+#	<dtype> (A*,B)
+#	<dtype> (A,B,[][]) etc.
+# where A is a variable type and B is a var name
+# <TYPE> can be one of: PARM_D|STAT_D|VAR_D|SHARED_D|TEMP_D|CONST_D|DEBUG_D|COEF_D
+BEGIN {
+	# modifies search path
+	push (@INC, "local", "../local");
+	# imports vocal perl module
+	require vocal; import vocal;
+}
+
+	%var_list = ();
+
+	$outputfile = shift;
+	$outputfile2 = $outputfile;
+	$outputfile2 =~ s/\.h/\.ful/;
+#	&load_options_file ("include/options.h");
+#	&load_options_file ("include/test.h");
+
+	$dtype = $vocal::dtype;
+
+	foreach $datalist_file (@ARGV) {
+		load_full_data_list ($datalist_file);
+	}
+	$struct_string = "\ntypedef struct {\n";
+	$define_string = "";
+	$var_string = "";
+	for $cur_var (keys %var_list) {
+		$struct_string .= sprintf ("\t%-10s %-27s _%s%s; %s\n", $var_list{$cur_var}[0],$var_list{$cur_var}[1], $cur_var, $var_list{$cur_var}[3], $var_list{$cur_var}[4]);
+		$define_string .= sprintf ("#define %-32s DATASTRUCT._%s \n",$cur_var,$cur_var);
+		$var_string .= sprintf ("%s\n",$cur_var);		;
+		if ($cur_var =~ /[\[\]\(\)]/) {
+			print "WARNING: brackets found in data define - check source file for syntax\n";
+			print "Offending entry was '$cur_var'\n";
+			print "\n";
+		}
+	}
+	$struct_string .= "} datastruct_t DATASTRUCT;\n\n\n";
+
+	open (OFILE,">$outputfile") || print "dataproc.prl: FAILED opening OUTPUT file";
+	print OFILE "$struct_string$define_string";
+	close (OFILE);
+
+	open (OFILE,">$outputfile2") || print "dataproc.prl: FAILED opening OUTPUT2 file";
+	print OFILE "$var_string";
+	close (OFILE);
+
+
+## ######################################################################### ##
+##
+ #	Entry Routine: load_full_data_list
+ #
+ #	Read from $filename (a data.src file) and load the var_list with
+ #	$data_type, $head, $var, $tail and $comment
+ #
+ #
+ #	Parameters:
+ #		Filename to read from.
+ #
+ #	Returns:
+ #		None.
+ #
+ #	Globals Affected:
+ #		"%var_list"		is loaded.
+ #
+	sub load_full_data_list
+	{
+		my($filename) = @_;
+		my($filedata);
+		my(@filedata_list);
+		open (DATALIST, $filename) || return print "\ndataproc.prl: FAILED opening DATALIST file $filename\n";
+		{
+			local $/;
+			$filedata = <DATALIST>;
+		}
+		close (DATALIST);
+#		&strip ($filedata);
+		@filedata_list = split /\n/,$filedata;
+
+		foreach $line (@filedata_list ) {
+			#match  <dtype> (head, var, tail) comment
+#			if ($line =~ m/[(\/\/.*)(\/\*.*\*\/)]/) {
+			$comment = "";
+			if ($line =~ m/((?:\/\/.*)|(?:\/\*.*\*\/))/) {
+				$comment = $1;
+				if ($comment =~ m|//(.*)|) {
+					$line =~ s|//.*||;
+				} else {
+					$line =~ s|/\*.*\*/||;
+				}
+#				print "$comment\n";
+			}
+
+#			if ($line =~ m/((?:$dtype))\s*\((.*)\)(.*)/ ) {
+			if ($line =~ m/((?:$dtype))\s*\((.*)\)/ ) {
+#			if (m/((?:$dtype))\s*\(([^\/]*)\)(.*)/ ) {
+				($head, $var, $tail) = split (/,/,$2,3);
+#				print "$head, $var, $tail\n";
+
+				$data_type = lc($1);
+#				$comment = lc($3);
+#				if ($comment eq "") {
+#					$comment = $3;
+#				}
+				# trim leading and trailing whitespace
+				$head     =~ s/^\s*(\S.*\S)\s*$/\1/;
+				$var      =~ s/^\s*(\S.*\S)\s*$/\1/;
+				$tail     =~ s/^\s*(.*)\s*$/\1/;
+				$tail     =~ s/\[/ \[/;
+				$comment  =~ s/^\s*(\S.*\S)\s*$/\1/;
+#				 print "*[".$data_type."] <".$head."> <".$var."> <". $tail."> <".$comment.">\n";
+				$var_list {$var} = [($data_type, $head, $var, $tail, $comment)] ;
+			}
+		}
+	}

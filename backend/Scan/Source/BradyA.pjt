@@ -1,0 +1,386 @@
+; Code Composer Project File, Version 2.0 (do not modify or remove this line)
+
+[Project Settings]
+ProjectDir="C:\2490H_sandboxes\cochld1\2490H-MR3\Source\"
+ProjectType=Executable
+CPUFamily=TMS320C55XX
+Tool="Compiler"
+Tool="DspBiosBuilder"
+Tool="Linker"
+Config="Debug"
+Config="Debug_UpdateSameCode"
+Config="EmcTesting"
+Config="HaltTesting"
+Config="ItemMap"
+Config="MaxSessionTime"
+Config="Release"
+Config="SkipInterrogation"
+Config="Validation"
+
+[Source Files]
+Source="2490G.cdb"
+Source="2490G_Defaults.c"
+Source="aim\aim_NVStorage.c"
+Source="aim\itoa.c"
+Source="bsm\bsm_AppCrc.c"
+Source="bsm\bsm_CheckHardware.c"
+Source="bsm\bsm_CrcValue.c"
+Source="bsm\bsm_DAA.c"
+Source="bsm\bsm_DebugOperations.c"
+Source="bsm\bsm_DebugPort.c"
+Source="bsm\bsm_Event.c"
+Source="bsm\bsm_Flash.c"
+Source="bsm\bsm_Flash_Intel.c"
+Source="bsm\bsm_Flash_SST.c"
+Source="bsm\bsm_General.c"
+Source="bsm\bsm_HaltTesting.c"
+Source="bsm\bsm_Led.c"
+Source="bsm\bsm_NVStorage.c"
+Source="bsm\bsm_Power.c"
+Source="bsm\bsm_serialport.c"
+Source="bsm\bsm_SUSoftwareUpdate.c"
+Source="bsm\bsm_SwitchInput.c"
+Source="bsm\bsm_TestMaxSessionTime.c"
+Source="bsm\bsm_TestSdramStart.c"
+Source="bsm\bsm_Tone.c"
+Source="bsm\dbg_battery.c"
+Source="bsm\dbg_BurnIn.c"
+Source="bsm\dbg_CalculateCrc.c"
+Source="bsm\dbg_ContinuousRf.c"
+Source="bsm\dbg_CountPulses.c"
+Source="bsm\dbg_Flash.c"
+Source="bsm\dbg_General.c"
+Source="bsm\dbg_led.c"
+Source="bsm\dbg_LoadProgram.c"
+Source="bsm\dbg_MeasureJitter.c"
+Source="bsm\dbg_menu.c"
+Source="bsm\dbg_Modem.c"
+Source="bsm\dbg_password.c"
+Source="bsm\dbg_PrintLog.c"
+Source="bsm\dbg_ReceiveXModem.c"
+Source="bsm\dbg_SendTelemAMessage.c"
+Source="bsm\dbg_SoftwareUpdate.c"
+Source="bsm\dbg_speaker.c"
+Source="bsm\dbg_switch.c"
+Source="bsm\dbg_TestExternalRam.c"
+Source="bsm\dbg_TestInternalRam.c"
+Source="com_main.c"
+Source="cslc5500\csl5502x.lib"
+Source="dsplib\craw.asm"
+Source="dsplib\fir2.asm"
+Source="dsplib\maxvec.asm"
+Source="fsm\fsm_encrypt.c"
+Source="fsm\fsm_file.c"
+Source="fsm\fsm_pbfr.c"
+Source="kappa\aim_enpulse.c"
+Source="kappa\aim_kappa.c"
+Source="kappa\aim_kdr700.c"
+Source="kappa\aim_KDR900.c"
+Source="kappa\aim_phoenix.c"
+Source="kappa\fsm_kappa.c"
+Source="nwm\nwm_http.c"
+Source="nwm\nwm_httpdigest.c"
+Source="nwm\nwm_net.c"
+Source="printf2490.c"
+Source="tam\tam_ContinuousEgm.c"
+Source="tam\tam_ItemMap.c"
+Source="tam\tam_ReceiveCommon.c"
+Source="tam\tam_ReceiveMemoryUplinks.c"
+Source="tam\tam_RepeatTask.c"
+Source="tam\tam_RttTest.c"
+Source="tam\tam_TelemetryA.c"
+Source="tam\tam_TransmitCommon.c"
+Source="tbm\tbm_autoid.c"
+Source="tbm\tbm_channel.c"
+Source="tbm\tbm_events.c"
+Source="tbm\tbm_fsm.c"
+Source="tbm\tbm_handler.c"
+Source="tbm\tbm_main.c"
+Source="tbm\tbm_queue.c"
+Source="tbm\tbm_rcv.c"
+Source="tbm\tbm_rx.c"
+Source="tbm\tbm_tctl.c"
+Source="tbm\tbm_timer.c"
+Source="tbm\tbm_trx.c"
+Source="tbm\tbm_tx.c"
+Source="uim\uim_ui.c"
+Source="zlib\puff.c"
+Source="zlib\zlm_decompress.c"
+Source="2490G_BradyApp.cmd"
+Source="link.cmd"
+
+[Generated Files]
+Source="2490Gcfg.s55"
+Source="2490Gcfg_c.c"
+
+["Debug" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_Debug_FlashBootLoader.cmd
+FinalBuildCmd=2490G_Calculate_CRC.cmd .\Debug 2490G_BradyA.hex
+
+["Debug_UpdateSameCode" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_UpdateSameCode_FlashBootLoader.cmd
+
+["EmcTesting" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_EmcTesting_FlashBootLoader.cmd
+
+["HaltTesting" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_HaltTesting_FlashBootLoader.cmd
+
+["ItemMap" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_ItemMap_FlashBootLoader.cmd
+
+["MaxSessionTime" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_MaxSessionTime_FlashBootLoader.cmd
+
+["Release" Settings]
+InitialBuildCmd=CALL Vocal\DeleteNetworkObjects.bat
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_FlashBootLoader.cmd
+FinalBuildCmd=2490G_Calculate_CRC.cmd .\Release 2490G_BradyA.hex
+FinalBuildCmd="$(Proj_dir)\gzip.exe --force --stdout $(Proj_dir)\Release\2490G_BradyA.bin > $(Proj_dir)\Release\2490G_BradyA.bin.gz"
+
+["SkipInterrogation" Settings]
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_SkipInterrogation_FlashBootLoader.cmd
+
+["Validation" Settings]
+InitialBuildCmd=CALL Vocal\DeleteNetworkObjects.bat
+InitialBuildCmd=CALL Vocal\CompileNetworkObjects.bat
+FinalBuildCmd=hex55.exe 2490G_BradyA_Validation_FlashBootLoader.cmd
+FinalBuildCmd=2490G_Calculate_CRC.cmd .\Validation 2490G_BradyA.hex
+FinalBuildCmd="$(Proj_dir)\gzip.exe --force --stdout $(Proj_dir)\Validation\2490G_BradyA.bin > $(Proj_dir)\Validation\2490G_BradyA.bin.gz"
+
+["Compiler" Settings: "Debug"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr".\Objs" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\zlib" -i".\zlib" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"DSP_2490" -d"__DEV_VT__" -ml -v5502
+
+["Compiler" Settings: "Debug_UpdateSameCode"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\Debug_UpdateSameCode" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"UPDATE_IF_SAME" -d"LOW_BATT_GPIO_TOGGLE" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "EmcTesting"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\EmcTesting" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"EMC_TESTING" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "HaltTesting"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\HaltTesting" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"HALT_TESTING" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "ItemMap"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\ItemMap" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"ITEM_TEST" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "MaxSessionTime"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\MaxSessionTime" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"MAX_SESSION_TIME_TEST" -d"LOW_BATT_GPIO_TOGGLE" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "Release"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\Release" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\zlib" -i".\zlib" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -ml -v5502
+
+["Compiler" Settings: "SkipInterrogation"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\SkipInterrogation" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"_DEBUG" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"SKIP_INTERROGATION" -d"SKIP_FUNCTIONAL_TEST" -ml -v5502
+
+["Compiler" Settings: "Validation"]
+Options=-g -mg -q -pdse225 -pden -pds1 -pds145 -pds179 -pds552 -pds169 -pds515 -fr"C:\2490G\Validation" -i"." -i".." -i"..\aim" -i".\aim" -i"..\bsm" -i".\bsm" -i"..\tbm" -i".\tbm" -i"..\tam" -i".\tam" -i"..\nwm" -i".\nwm" -i"..\cspy" -i".\cspy" -i"..\fsm" -i".\fsm" -i"..\uim" -i".\uim" -i"..\zlib" -i".\zlib" -i"..\dsplib" -i".\dsplib" -i"..\Vocal" -i".\Vocal" -i"..\Vocal\customer" -i".\Vocal\customer" -i"..\Vocal\utils" -i".\Vocal\utils" -i"..\TachyA" -i".\TachyA" -i"..\kappa" -i".\kappa" -i"..\pdd2cspy.sim" -i".\pdd2cspy.sim" -i".\cslc5500\include" -i"..\cslc5500\include" -d"CHIP_5502" -d"__BRADYA__" -d"__2490TELEMA__" -d"__2490TELEMA_ICD__" -d"DSP_2490" -d"__DEV_VT__" -ml -v5502
+
+["DspBiosBuilder" Settings: "Debug"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "Debug_UpdateSameCode"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "EmcTesting"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "HaltTesting"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "ItemMap"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "MaxSessionTime"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "Release"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "SkipInterrogation"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "Validation"]
+Options=-v55
+
+["Linker" Settings: "Debug"]
+Options=-q -c -m".\Debug\2490G_BradyA.map" -o".\Debug\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "Debug_UpdateSameCode"]
+Options=-q -c -m".\Debug_UpdateSameCode\2490G_BradyA.map" -o".\Debug_UpdateSameCode\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "EmcTesting"]
+Options=-q -c -m".\EmcTesting\2490G_BradyA.map" -o".\EmcTesting\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "HaltTesting"]
+Options=-q -c -m".\HaltTesting\2490G_BradyA.map" -o".\HaltTesting\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "ItemMap"]
+Options=-q -c -m".\ItemMap\2490G_BradyA.map" -o".\ItemMap\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "MaxSessionTime"]
+Options=-q -c -m".\MaxSessionTime\2490G_BradyA.map" -o".\MaxSessionTime\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "Release"]
+Options=-q -c -m".\Release\2490G_BradyA.map" -o".\Release\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "SkipInterrogation"]
+Options=-q -c -m".\SkipInterrogation\2490G_BradyA.map" -o".\SkipInterrogation\2490G_BradyA.out" -x -i".\cslc5500"
+
+["Linker" Settings: "Validation"]
+Options=-q -c -m".\Validation\2490G_BradyA.map" -o".\Validation\2490G_BradyA.out" -x -i".\cslc5500"
+
+["2490G_Defaults.c" Settings: "Release"]
+ExcludeFromBuild=true
+
+["2490G_Defaults.c" Settings: "Validation"]
+ExcludeFromBuild=true
+
+["bsm\bsm_TestMaxSessionTime.c" Settings: "Release"]
+ExcludeFromBuild=true
+
+["bsm\bsm_TestMaxSessionTime.c" Settings: "Validation"]
+ExcludeFromBuild=true
+
+["dsplib\craw.asm" Settings: "Debug"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "Debug_UpdateSameCode"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "EmcTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "HaltTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "ItemMap"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "MaxSessionTime"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "Release"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "SkipInterrogation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\craw.asm" Settings: "Validation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "Debug"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "Debug_UpdateSameCode"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "EmcTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "HaltTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "ItemMap"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "MaxSessionTime"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "Release"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "SkipInterrogation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\fir2.asm" Settings: "Validation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "Debug"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "Debug_UpdateSameCode"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "EmcTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "HaltTesting"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "ItemMap"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "MaxSessionTime"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "Release"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "SkipInterrogation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["dsplib\maxvec.asm" Settings: "Validation"]
+Options="Compiler" +{-oi30} -{-mg}
+
+["tam\tam_ReceiveCommon.c" Settings: "Debug"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "Debug_UpdateSameCode"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "EmcTesting"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "HaltTesting"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "ItemMap"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "MaxSessionTime"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "Release"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "SkipInterrogation"]
+Options="Compiler" +{-o0}
+
+["tam\tam_ReceiveCommon.c" Settings: "Validation"]
+Options="Compiler" +{-o0}
+
+["link.cmd" Settings: "Debug"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "Debug_UpdateSameCode"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "EmcTesting"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "HaltTesting"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "ItemMap"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "MaxSessionTime"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "Release"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "SkipInterrogation"]
+ExcludeFromBuild=true
+
+["link.cmd" Settings: "Validation"]
+ExcludeFromBuild=true
+

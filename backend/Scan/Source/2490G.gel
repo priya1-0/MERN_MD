@@ -1,0 +1,267 @@
+/*************************************************/
+/* EMIF REGISTERS                                */
+/*************************************************/
+	#define EMIF_GCR1		0x800
+	#define EMIF_GCR2		0x801
+	#define EMIF_CE1_1		0x802
+	#define EMIF_CE1_2		0x803
+	#define EMIF_CE0_1		0x804
+	#define EMIF_CE0_2		0x805
+	#define EMIF_CE2_1		0x808
+	#define EMIF_CE2_2		0x809
+	#define EMIF_CE3_1		0x80A
+	#define EMIF_CE3_2		0x80B
+	#define EMIF_SDCTL1		0x80C
+	#define EMIF_SDCTL2		0x80D
+	#define EMIF_SDRFR1		0x80E
+	#define EMIF_SDRFR2		0x80F
+	#define EMIF_SDEXT1		0x810
+	#define EMIF_SDEXT2		0x811
+	#define EMIF_CE1_SC1	0x822
+	#define EMIF_CE1_SC2	0x823
+	#define EMIF_CE0_SC1	0x824
+	#define EMIF_CE0_SC2	0x825
+	#define EMIF_CE2_SC1	0x828
+	#define EMIF_CE2_SC2	0x829
+	#define EMIF_CE3_SC1	0x82A
+	#define EMIF_CE3_SC2	0x82B
+	#define EMIF_CECTL1		0x840
+	#define EMIF_CECTL2		0x841
+
+/*************************************************/
+/* PLL REGISTERS                                 */
+/*************************************************/
+	#define PLLCSR	0x1C80
+	#define CK3SEL	0x1C82  //was0x1C81 for 5502
+	#define PLLM	0x1C88
+	#define PLLDIV0	0x1C8A
+	#define PLLDIV1	0x1C8C
+	#define PLLDIV2	0x1C8E
+	#define PLLDIV3	0x1C90
+	#define OSCDIV1	0x1C92
+	#define WAKEUP	0x1C98
+
+/*************************************************/
+/* DMA REGISTERS                                 */
+/*************************************************/
+	#define DMA_CCR0 0xc01
+	#define DMA_CCR1 0xc21
+	#define DMA_CCR2 0xc41
+	#define DMA_CCR3 0xc61
+	#define DMA_CCR4 0xc81
+	#define DMA_CCR5 0xca1
+
+/*************************************************/
+/* INTERRUPT REGISTERS                           */
+/*************************************************/
+	#define INT_IER0 0x000
+	#define INT_IER1 0x045
+	#define INT_INTM 0x003
+
+/*************************************************/
+/* PLL REGISTERS                                 */
+/*************************************************/
+	#define PLL_CSR      0x1C80
+    #define PLL_CK3SEL   0x1C82
+    #define PLL_LM       0x1C88
+    #define PLL_DIV0     0x1C8A
+    #define PLL_DIV1     0x1C8C
+    #define PLL_DIV2     0x1C8E
+    #define PLL_DIV3     0x1C90
+    #define PLL_OSCDIV1  0x1C92
+    #define PLL_WKEN     0x1C98
+    #define PLL_CLKOUTSR 0x8400
+    #define PLL_CLKMD    0x8C00
+	
+/*************************************************/
+/* HPI Register                                  */
+/*************************************************/
+	#define HGPIOEN		0xA006
+	#define HGPIODIR1	0xA008
+	#define HGPIODAT1	0xA00A
+	#define HGPIODIR2	0xA00C
+	#define HGPIODAT2	0xA00E
+
+/* The Startup() function is executed when the GEL file is loaded. */
+StartUp()
+{
+ 	Init_2490G(); 
+ 	EMIF_Init_2490G();
+//	HPI_Init_2490G();
+
+	GEL_TextOut("2490G GEL StartUp Complete.\n");
+}
+
+/* OnReset() is called after the target processor has been reset.*/
+OnReset()
+{
+    /* Disable interrupts */
+    *(int *)0x0003 = *(int *)0x0003 | 0x0800;  /* Set INTM in ST1_55*/
+    *(int *)INT_IER0 = 0;  /* Clear IER0 */
+    *(int *)INT_INTM = 0;  /* Clear IER1 */
+
+    /* Disable each DMA channel */
+	//GEL_MemoryFill( startAddress, page(memory type), length(words), pattern(a word) )
+    //Page is Memory Type: Program memory 0
+    //                     Data memory    1
+    //                     I/O space      2
+    GEL_MemoryFill(0xc01,2,1,0x0000);  /* DMA0 */
+    GEL_MemoryFill(0xc21,2,1,0x0000);  /* DMA1 */
+    GEL_MemoryFill(0xc41,2,1,0x0000);  /* DMA2 */
+    GEL_MemoryFill(0xc61,2,1,0x0000);  /* DMA3 */
+    GEL_MemoryFill(0xc81,2,1,0x0000);  /* DMA4 */
+    GEL_MemoryFill(0xca1,2,1,0x0000);  /* DMA5 */
+
+    Init_2490G(); 
+	EMIF_Init_2490G();
+//	HPI_Init_2490G();
+}
+
+
+
+
+menuitem "2490G_Configuration";
+hotmenu Init_2490G()
+{
+
+	GEL_MapOn();
+	GEL_MapReset();
+    
+    //GEL_MapAdd( address, page(memory type), length(words), readable(Bool), writeable(Bool) );
+    //Page is Memory Type: Program memory 0
+    //                     Data memory    1
+    //                     I/O space      2
+    //Bool:                false          0
+    //                     true           1
+
+	
+	/* Program Space */
+	GEL_MapAdd(0x0000C0u,0,0x00FF40u,1,1);/* Internal (DARAM? CACHE?) */
+	GEL_MapAdd(0x010000u,0,0x3F0000u,1,1);/* Flash CE0      */
+	GEL_MapAdd(0x400000u,0,0x400000u,1,1);/* Flash CE1      */
+	GEL_MapAdd(0x800000u,0,0x400000u,1,1);/* SDRAM CE2      */
+	GEL_MapAdd(0xA00000u,0,0x400000u,1,1);/* SDRAM CE3      */ 
+	GEL_MapAdd(0xFF8000u,0,0x008000u,1,0);/* Internal ROM   */
+
+
+    /* Data Space ??? UNKNOWN - Unsure why factor 2 difference btwn this and Program Space*/
+	GEL_MapAdd(0x000000u,1,0x000050u,1,1);	/* MMRs*/
+	GEL_MapAdd(0x000060u,1,0x00FFA0u,1,1);	/* DARAM */
+	GEL_MapAdd(0x08000u, 1,0x1D8000u,1,1);	/* External CE0_ */
+	GEL_MapAdd(0x200000u,1,0x200000u,1,1);	/* External CE1_ */
+	GEL_MapAdd(0x400000u,1,0x200000u,1,1);	/* External CE2_ */
+//	GEL_MapAdd(0x600000u,1,0x200000u,1,1);	/* External CE3_ */
+	GEL_MapAdd(0x600000u,1,0x1FC000u,1,1);	/* External CE3_ */
+	GEL_MapAdd(0x7FC000u,1,0x004000u,1,0);	/* PDROM */
+	
+	/* IO Space ??? UNKNOWN*/
+                                                               //actual
+ 	GEL_MapAdd(0x0000u,2,0x0800u,1,1); 	// PERIPH REG (RHEA)     0x07FF ***** P94, didn't map XCR, XERR, DCR. DERR. IERR. CONFIG 
+	GEL_MapAdd(0x0800u,2,0x0042u,1,1); 	// EMIF                  0x0042 
+	GEL_MapAdd(0x0C00u,2,0x0E02u,1,1); 	// DMA                   0x0E02 ***** P95, didn't map DMA_GCR(2:0), DMA_GTCR(3:0)
+	GEL_MapAdd(0x1000u,2,0x0014u,1,1); 	// TIMER#0               0x0014 
+	GEL_MapAdd(0x1400u,2,0x0004u,1,1); 	// ICACHE                0x0004
+	GEL_MapAdd(0x1C00u,2,0x0080u,1,1); 	// CLKGEN                CANNOT FIND THIS ADDR IN 5501 DATA SHEET, ALLOW TO FILL ALL SPACE
+	GEL_MapAdd(0x1C80u,2,0x0019u,1,1); 	// PLL Control           0x0019    
+	GEL_MapAdd(0x2000u,2,0x0055u,1,1);	// TRACE FIFO            0x0055
+	GEL_MapAdd(0x2400u,2,0x0014u,1,1); 	// TIMER#1               0x0014
+	GEL_MapAdd(0x2800u,2,0x0020u,1,1); 	// SERIAL PORT#0         0x0020
+	GEL_MapAdd(0x2C00u,2,0x0020u,1,1); 	// SERIAL PORT#1         0x0020
+	GEL_MapAdd(0x3400u,2,0x0002u,1,1); 	// GPIO                  0x0002
+	GEL_MapAdd(0x3800u,2,0x0008u,1,1); 	// ID                    0x0008
+	GEL_MapAdd(0x3C00u,2,0x000Fu,1,1); 	// I2C                   0x000F
+	GEL_MapAdd(0x4000u,2,0x0016u,1,1); 	// TIMER#2               0x0016 ***** P99, didn't map WDTWCTL1/2 (watchdog timer control registers)
+	GEL_MapAdd(0x4400u,2,0x0009u,1,1); 	// PGPIO                 0x0009
+	GEL_MapAdd(0x6C00u,2,0x0002u,1,1); 	// XBSR                  0x0002
+	GEL_MapAdd(0x7800u,2,0x0400u,1,1); 	// BIOS Timer            CANNOT FIND THIS ADDR IN 5501 DATA SHEET, ALLOW TO FILL ALL SPACE
+	GEL_MapAdd(0x8000u,2,0x0002u,1,1); 	// Timer Signal Selector 0x0002
+	GEL_MapAdd(0x8400u,2,0x0002u,1,1); 	// CLKOUT selector       0x0002
+	GEL_MapAdd(0x8800u,2,0x0400u,1,1); 	// IOMACRO (XBCR)        0x0002 ?????, CANNOT FIND MORE THAT 0x0002 IN 5501 DATA SHEET, ALLOW TO FILL ALL SPACE
+	GEL_MapAdd(0x8c00u,2,0x0002u,1,1); 	// CLKMD                 0x0002
+	GEL_MapAdd(0x9000u,2,0x0400u,1,1); 	// Peri data Mux         0x0002  ?????, CANNOT FIND MORE THAT 0x0002 IN 5501 DATA SHEET, ALLOW TO FILL ALL SPACE
+	GEL_MapAdd(0x9400u,2,0x0004u,1,1); 	// IDLE                  0x0004
+	GEL_MapAdd(0x9C00u,2,0x000Du,1,1); 	// UART                  0x000D
+	GEL_MapAdd(0xA000u,2,0x0028u,1,1); 	// UHPI                  0x0028
+
+	/*Init of the PLL Settings*/
+    GEL_MemoryFill(PLL_CSR      ,2,1,0x0001 );
+    GEL_MemoryFill(PLL_CK3SEL   ,2,1,0x000B );
+    GEL_MemoryFill(PLL_LM       ,2,1,0x000f ); // 'f' == x15 Mult == 300MHz //was a
+    GEL_MemoryFill(PLL_DIV0     ,2,1,0x8000 ); // CPU Clock Div == 1
+    GEL_MemoryFill(PLL_DIV1     ,2,1,0x8001 ); // SysClk1: SP == 2
+    GEL_MemoryFill(PLL_DIV2     ,2,1,0x8001 ); // SysClk2: FP == 2
+    GEL_MemoryFill(PLL_DIV3     ,2,1,0x8003 ); // SysClk3: EMIF == 4
+    GEL_MemoryFill(PLL_OSCDIV1  ,2,1,0x0000 );
+    GEL_MemoryFill(PLL_WKEN     ,2,1,0x0002 );
+    GEL_MemoryFill(PLL_CLKOUTSR ,2,1,0x0005 );
+    GEL_MemoryFill(PLL_CLKMD    ,2,1,0X0000 );	
+
+	GEL_TextOut("2490G_Init Complete.\n");
+}
+
+
+
+hotmenu EMIF_Init_2490G() 
+{	//GEL_MemoryFill( startAddress, page(memory type), length(words), pattern(a word) )
+    //Page is Memory Type: Program memory 0
+    //                     Data memory    1
+    //                     I/O space      2
+
+	GEL_MemoryFill(0x6c00 ,2,1,0x0001);       /* Enable EMIF bus. */
+
+	GEL_MemoryFill(EMIF_CECTL1	,2,1,0x0001 );
+	GEL_MemoryFill(EMIF_CECTL2	,2,1,0x0000 );
+
+	GEL_MemoryFill(EMIF_GCR1	,2,1,0x00E0 );
+	GEL_MemoryFill(EMIF_GCR2	,2,1,0x0002 );
+
+	GEL_MemoryFill(EMIF_CE1_1	,2,1,0x8411 );
+	GEL_MemoryFill(EMIF_CE1_2	,2,1,0x2152 );
+	GEL_MemoryFill(EMIF_CE0_1	,2,1,0x8411 );
+	GEL_MemoryFill(EMIF_CE0_2	,2,1,0x2152 );
+	GEL_MemoryFill(EMIF_CE2_1	,2,1,0xFF33 );
+	GEL_MemoryFill(EMIF_CE2_2	,2,1,0xFFFF );
+	GEL_MemoryFill(EMIF_CE3_1	,2,1,0xFF33 );
+	GEL_MemoryFill(EMIF_CE3_2	,2,1,0xFFFF );
+
+	GEL_MemoryFill(EMIF_CE1_SC1	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE1_SC2	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE0_SC1	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE0_SC2	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE2_SC1	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE2_SC2	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE3_SC1	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_CE3_SC2	,2,1,0x0000 );
+
+
+	/*SDRAM - Samsung 64Mb x16 TSOP (K4S641632F-70)*/
+	GEL_MemoryFill(EMIF_SDRFR1	,2,1,0x0927 );
+	GEL_MemoryFill(EMIF_SDRFR2	,2,1,0x0000 );
+	GEL_MemoryFill(EMIF_SDEXT2	,2,1,0x0005 );
+	GEL_MemoryFill(EMIF_SDEXT1	,2,1,0x45B7 );
+	GEL_MemoryFill(EMIF_SDCTL1	,2,1,0x5000 );//LSB clear to disable self-refresh
+	GEL_MemoryFill(EMIF_SDCTL2	,2,1,0x4751 );//bit 8 set initialize SDRAM in each CE space configured for SDRAM. EMIF automatically changes INITback to 0 after SDRAM initialization performed.
+                                              //bit 9 set to enable SDRAM refresh
+
+	GEL_TextOut("2490G EMIF Init Complete.\n");
+}
+
+hotmenu HPI_Init_2490G() 
+{	//GEL_MemoryFill( startAddress, page(memory type), length(words), pattern(a word) )
+    //Page is Memory Type: Program memory 0
+    //                     Data memory    1
+    //                     I/O space      2
+
+	GEL_MemoryFill(HGPIOEN,2,1,0x00D7);
+	GEL_MemoryFill(HGPIODIR1,2,1,0x000E);
+	GEL_MemoryFill(HGPIODAT1,2,1,0x000E);
+	GEL_MemoryFill(HGPIODIR2,2,1,0x01BB);
+	GEL_MemoryFill(HGPIODAT2,2,1,0x0028);
+
+	GEL_TextOut("2490G HPI Init Complete.\n");
+}
+
+
+
+
+

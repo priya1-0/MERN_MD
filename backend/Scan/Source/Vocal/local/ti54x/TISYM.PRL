@@ -1,0 +1,151 @@
+#!/usr/bin/perl
+
+# ######################################################################## #
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+# ######################################################################## #
+
+sub usage
+{
+	my ($retval) = (@_);
+	print STDERR "Usage: tisym.prl <\$ym_file> <sym_file>\n";
+	exit ($retval);
+}
+
+# ######################################################################## #
+
+sub report_struct_fields
+{
+	local ($name, $address, $type) = @_;
+
+	foreach $n (keys %structname){
+		if($structname{$n} =~ $name){
+			printf (OUT_FILE "%s %06x %s\n", $n, $indexof{$n} + $address, $type);
+
+		}
+	}
+
+#$filename = "data/$name.h";
+
+
+##	if ($line =~ s/((?:$structlist)) \. _([_A-Za-z0-9]+)/_$1 + $indexof{$2}/) {
+
+	#asm ("	.asg struct+offset, field");
+
+#	open (DATA_FILE, $filename) or die "Unable to open $filename";
+
+#	while ($data_line = <DATA_FILE>) {
+#		if ($data_line =~ m/^\s*asm\s+.+\+(\d+)\,\s+(\w+)/) {
+#			$field_address = $address + $1;
+#			$field_name    = $2;
+#
+#			printf (OUT_FILE "%s %06x %s\n", $field_name, $field_address, $type);
+#		}
+#	}
+#
+#	close (DATA_FILE);
+}
+
+# ######################################################################## #
+
+	if (@ARGV != 2) {
+		usage (1);
+	}
+
+	$input_file  = shift;
+	$output_file = shift;
+
+	$input_file  =~ s/\\/\//g;
+	$input_file  =~ s/\/\//\//g;
+
+	$output_file =~ s/\\/\//g;
+	$output_file =~ s/\/\//\//g;
+
+# ######################################################################## #
+
+%indexof = ();
+%structname = ();
+
+open(STRC, "offsets.cat") || open(STRC, "data/offsets.cat") || open(STRC, "../data/offsets.cat") || die "Could not open offsets.cat\n";
+$structlist = <STRC>;
+if($structlist !~ m/\:/) {
+	if($structlist  =~ m/\|$/) {
+		$structlist =~ s/\n/endofstructs/;
+	} else {
+		$structlist =~ s/\n/|endofstructs/;
+	}
+} else {
+	$structlist =~ m/(.*)\n/;
+	($struct, $name, $offset, $size) = split(/:/, $1);
+	$indexof{"$name"} = $offset;
+	$structname{"$name"} = $struct;
+	$structlist = "endofstructs";
+
+}
+$structlist =~ s/\|$//;		# Remove trailing vertical bar
+
+
+$same = 1;
+while(<STRC>){
+	m/(.*)\n/;
+	($struct, $name, $offset) = split(/:/, $1);
+	$indexof{"$name"} = $offset;
+	$structname{"$name"} = $struct;
+}
+close(STRC);
+
+# ######################################################################## #
+
+	open (IN_FILE,  "$input_file") or die "Can't open $input_file";
+	open (OUT_FILE, ">$output_file") or die "Can't open $output_file";
+
+	while ($line = <IN_FILE>) {
+#		print "$line";
+
+		$struct_match = 0;
+
+		if ($line =~ m/(\w+)\s+([0-9A-Fa-f]{6})\s+(\w)/) {
+			$st_name    = $1;
+			$st_hex = $2;
+			$st_address = hex ($2);
+			$st_type    = $3;
+
+#			Undo C++ name (de)mangling
+			if ($st_name =~ m/__F/) {
+				$st_name = $`;
+				$line = $st_name." ".$st_hex." ".$st_type."\n";
+			}
+#	print "$st_name, $st_address, $st_type\n";
+##	if ($line =~ s/((?:$structlist)) \. _([_A-Za-z0-9]+)/_$1 + $indexof{$2}/) {
+			if ($st_name =~ m/((?:$structlist))/) {
+#	print "macthed structlist = $structlist\n";
+				report_struct_fields ($st_name, $st_address, $st_type);
+				$struct_match = 1;
+			}
+
+#			foreach $st (@struct_list) {
+#				if ($st eq $st_name) {
+#					report_struct_fields ($st_name, $st_address, $st_type);
+#					$struct_match = 1;
+#					last;
+#				}
+#			}
+		}
+
+		if ($struct_match == 0) {
+			print OUT_FILE "$line";
+		}
+	}
+
+	close (IN_FILE);
+	close (OUT_FILE);
+
+# ######################################################################## #

@@ -1,0 +1,547 @@
+#	mkdata.prl - usg. mkdata.prl  output_dir structname src, src, src ...
+#
+#
+#
+#
+BEGIN {
+	# modifies search path
+	push (@INC, "local", "../local");
+	# imports vocal perl module
+	require vocal; import vocal;
+}
+
+
+	# clear the hashes
+	%found_var = ();
+	%var_list = ();
+	%struct_string = ();
+	%contains_data = ();
+	%MC_hash = ();
+	%mem_to_pointer = ();
+	%mem_to_structure = ();
+	%structure_map = ();
+
+	%group_string = ();
+	$temp_group_string = "";
+
+	%type_suffix = %vocal::lc_type_suffix;
+	$keep_empty = $vocal::keep_empty;
+	$dtype = $vocal::dtype;
+	$file_suffix = $vocal::file_suffix;
+
+#	$preprocessed_file = shift;
+	$output_dir = shift;
+	$structname = shift;
+
+	&load_options_file ("include/options.h");
+	&load_options_file ("include/reconfig.h");
+	&load_options_file ("include/test.h");
+
+	$multichannel_build = is_defined("DO_SYS_MULTI_DEVICES");
+
+	if($multichannel_build) {
+		load_struct_map("data/mc.src");
+
+	#	foreach $st (keys %structure_map) {
+	#		foreach $ty (keys %{$structure_map{$st}}) {
+	#			print "$st $ty $structure_map{$st}{$ty}\n";
+	#		}
+	#	}
+	}
+
+	foreach $datalist_file (@ARGV) {
+		load_full_data_list ($datalist_file);
+	}
+
+
+	#create the upper and lower case versions of each of the
+	#<structname>_<type_suffix> structure names
+	for $cur_data_type (keys %type_suffix) {
+		 $LCstructname{$cur_data_type} = lc($structname ."_".$type_suffix{$cur_data_type});
+		 $UCstructname{$cur_data_type} = uc($structname ."_".$type_suffix{$cur_data_type});
+	}
+
+	open (XREFLIST, "data/xref.cat") || print "mkdata.prl: FAILED opening xref.cat";
+	while (<XREFLIST>) {
+		next unless s/^(.*?):\s*//;
+		$found_var{$1} = $1;
+	}
+	close(XREFLIST);
+
+	# load @names with the names of all of the variables possible
+	@names = sort byindex keys(%var_list);
+
+	## ######################################################################### ##
+
+# write the struct to one string and the defines to another
+	for $cur_data_type (keys %type_suffix) {
+		if ($cur_data_type eq "local_d") {
+			$define_string{$cur_data_type} = "\n";
+# removed local file ifdefs temporarily
+#			$define_string{$cur_data_type} = sprintf ("\n#ifdef %s_MOD\n\n",uc($structname));
+		} else {
+			$define_string{$cur_data_type} = "\n";
+		}
+	$struct_string{$cur_data_type} = "\ntypedef struct {\n";
+	}
+	foreach $cur_var (@names) {
+		$cur_data_type = $var_list{$cur_var}[0];
+
+		if ($found_var{$cur_var}) {
+			#variable found in preprocessed c code
+			$struct_string{$cur_data_type} .= sprintf ("\t%-10s %-27s _%s%s; %s\n", $var_list{$cur_var}[0],
+									   $var_list{$cur_var}[1],
+									   $cur_var,
+									   $var_list{$cur_var}[3],
+									   $var_list{$cur_var}[4]);
+#			print "[".$var_list{$cur_var}[0]."][".$var_list{$cur_var}[1]."][". $cur_var."][".$var_list{$cur_var}[3]."][".$var_list{$cur_var}[4]."]\n";
+
+			$define_string{$cur_data_type} .= sprintf ("#define %-32s $UCstructname{$cur_data_type}._%s \n",$cur_var,$cur_var);
+			$contains_data{$cur_data_type} = 1;
+		} else {
+			if($var_list{$cur_var}[4] =~ m/var_used/) {
+				#force inclusion due to var_used tag
+				$struct_string{$cur_data_type} .= sprintf ("\t%-10s %-27s _%s%s; %s\n", $var_list{$cur_var}[0],
+										   $var_list{$cur_var}[1],
+										   $cur_var,
+										   $var_list{$cur_var}[3],
+										   $var_list{$cur_var}[4]);
+				$define_string{$cur_data_type} .= sprintf ("#define %-32s $UCstructname{$cur_data_type}._%s \n",$cur_var,$cur_var);
+				$contains_data{$cur_data_type} = 1;
+			} else {
+				#variable not needed
+				$struct_string{$cur_data_type} .= sprintf ("//\t%-10s %-27s _%s%s; %s\n", $var_list{$cur_var}[0],
+										   $var_list{$cur_var}[1],
+										   $cur_var,
+										   $var_list{$cur_var}[3],
+										   $var_list{$cur_var}[4]);
+				$define_string{$cur_data_type} .= sprintf ("//#define %-30s $UCstructname{$cur_data_type}._%s \n",$cur_var,$cur_var);
+			}
+		}
+	}
+
+	## ######################################################################### ##
+
+	for $cur_data_type (keys %type_suffix) {
+	#tail of section
+	    if (!$contains_data{$cur_data_type}) {
+		$struct_string{$cur_data_type} .= sprintf ("\t%-10s%-27s_unused; \n", $cur_data_type, "uint16");
+		$struct_string{$cur_data_type} .= "} " . $LCstructname{$cur_data_type} . "_t;\n\n\n";
+	    }
+	    else {
+		#if struct is empty, don't def_data it */
+		$struct_string{$cur_data_type} .= "} " . $LCstructname{$cur_data_type} . "_t;\n";
+		$struct_string{$cur_data_type} .= "\n/* ************************************************************************* */\n\n";
+
+		if ($multichannel_build == 0) {
+			$struct_string{$cur_data_type} .= sprintf("DEF_DATA(%s_t, %s)\n",$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+			$struct_string{$cur_data_type} .= sprintf("#define %s_DATA %s_t %s %s \n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+			$struct_string{$cur_data_type} .= sprintf("#define %s USE_DATA(%s)\n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+			$struct_string{$cur_data_type} .= sprintf("#define %s_used\n",$LCstructname{$cur_data_type});
+		} else {
+			$temp_name = uc($structname);
+			$temp_type = uc($cur_data_type);
+
+			if ($structure_map{$temp_name}{$temp_type} eq "EXCLUDE") {
+				# specific EXCLUDE
+				$struct_string{$cur_data_type} .= sprintf("DEF_DATA_SYSTEM(%s_t, %s)\n",$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+				$struct_string{$cur_data_type} .= sprintf("#define %s_DATA %s_t %s %s \n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+				$struct_string{$cur_data_type} .= sprintf("#define %s %s\n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+				$struct_string{$cur_data_type} .= sprintf("#define %s_used\n",$LCstructname{$cur_data_type});
+			}
+			else {
+				if ($structure_map{$temp_name}{$temp_type}) {
+					# normal overide
+					$structure_pointer = $mem_to_pointer{$structure_map{$temp_name}{$temp_type}};
+					$temp_group_string = $group_string{$temp_name}{$temp_type};
+#if ($contains_data{$cur_data_type} || $keep_empty{$cur_data_type}) {
+					$MC_hash {$structure_pointer} .=  "\n$UCstructname{$cur_data_type}_DATA;";
+#}
+					$struct_string{$cur_data_type} .= sprintf("DEF_DATA(%s_t, %s)\n",$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+					$struct_string{$cur_data_type} .= sprintf("#define %s_DATA %s_t %s %s \n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+					$struct_string{$cur_data_type} .= sprintf("#define %s %s->%s%s\n",$UCstructname{$cur_data_type},$structure_pointer,$temp_group_string,$LCstructname{$cur_data_type});
+				} else {
+					$structure_pointer = $mem_to_pointer{$structure_map{"*"}{$temp_type}};
+					$temp_group_string = "";
+					if ($structure_map{"*"}{$temp_type} eq "EXCLUDE") {
+						# default EXCLUDE
+						$struct_string{$cur_data_type} .= sprintf("DEF_DATA_SYSTEM(%s_t, %s)\n",$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+						$struct_string{$cur_data_type} .= sprintf("#define %s_DATA %s_t %s %s \n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+						$struct_string{$cur_data_type} .= sprintf("#define %s %s\n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+						$struct_string{$cur_data_type} .= sprintf("#define %s_used\n",$LCstructname{$cur_data_type});
+					}
+					else {
+						# normal default rule
+#if ($contains_data{$cur_data_type} || $keep_empty{$cur_data_type}) {
+						$MC_hash {$structure_pointer} .=  "\n$UCstructname{$cur_data_type}_DATA;";
+#}
+						$struct_string{$cur_data_type} .= sprintf("DEF_DATA(%s_t, %s)\n",$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+						$struct_string{$cur_data_type} .= sprintf("#define %s_DATA %s_t %s %s \n",$UCstructname{$cur_data_type},$LCstructname{$cur_data_type},$LCstructname{$cur_data_type});
+						$struct_string{$cur_data_type} .= sprintf("#define %s %s->%s%s\n",$UCstructname{$cur_data_type},$structure_pointer,$temp_group_string,$LCstructname{$cur_data_type});
+					}
+				}
+			}
+		}
+	    }
+	    $struct_string{$cur_data_type} .= "\n/* ************************************************************************* */\n";
+
+	    if ($cur_data_type eq "local_d") {
+# removed local file ifdefs temporarily
+#	    $define_string{$cur_data_type} .= sprintf ("\n#endif /* %s_MOD */\n",uc($structname));
+	    }
+	}
+
+	## ######################################################################### ##
+
+	if (0) {	# This is the old way we produced a file for each data type
+# #write both strings out to each file in the appropriate subdir
+# 	for $cur_data_type (keys %type_suffix) {
+# 		if (!-d "data/$structname") {
+# 			print "data/$structname does not exist...creating\n";
+# 			mkdir ("data/$structname",0777);
+# 		}
+#
+# 		$outputfile = "$output_dir/$structname$file_suffix{$cur_data_type}.h";
+# 		$output_file_short = "$structname$file_suffix{$cur_data_type}.h";
+# 		$output_file_define = uc("$structname$file_suffix{$cur_data_type}_H");
+#
+# # This could be used to eliminate empty files
+# 		if (!$contains_data{$cur_data_type} && !$keep_empty{$cur_data_type}) {
+# #			print "Skipping empty $outputfile\n";
+# 			print "Could skip empty $outputfile\n";
+# #			next;
+# 		}
+#
+# 		open (OFILE,">$outputfile") || print "FAILED opening output file $outputfile\n";
+#
+# 		print OFILE "\n";
+# 		print OFILE &create_vocal_file_header
+# 			 (
+# 			  $output_file_short,
+# 			  (localtime) [5] + 1900,
+# 			  "MODEM 101",
+# 			  "DATA",
+# 			  sprintf ("This file contains automatically generated data for %s %s.", $structname, $type_suffix{$cur_data_type})
+# 			 );
+#
+# 		print OFILE "\n#ifndef _DATA_" . $output_file_define . "\n";
+# 		print OFILE "#define _DATA_" . $output_file_define . "\n";
+# 		print OFILE "#include \"data/sections.h\"\n";
+# 		print OFILE "\n/* ************************************************************************* */\n";
+#
+# # This eliminates empty structures
+# #		if ($contains_data{$cur_data_type}) {
+# 			print OFILE "$struct_string{$cur_data_type}$define_string{$cur_data_type}";
+# #		}
+#
+# 		print OFILE "\n/* ************************************************************************* */\n";
+# 		print OFILE "\n#endif /* _DATA_" . $output_file_define . " */\n";
+#
+# 		close (OFILE);
+# 	}
+ 	}
+
+	## ######################################################################### ##
+
+
+
+#write strings out to single file in the appropriate subdir
+	if (0) {
+# 	if (!-d "data/$structname"."_d") {
+# 		print "data/$structname"."_d does not exist...creating\n";
+# 		mkdir ("data/$structname"."_d",0777);
+# 	}
+	}
+
+	if (!-d "data/auto") {
+		print "data/auto does not exist...creating\n";
+		mkdir ("data/auto",0777);
+	}
+
+	$outputfile = "$output_dir/$structname.h";
+	$output_file_short = "$structname.h";
+	$output_file_define = uc("$structname"."_H");
+
+	open (OFILE,">$outputfile") || print "FAILED creating output file $outputfile\n";
+
+	print OFILE "\n";
+	print OFILE &create_vocal_file_header
+		 (
+		  $output_file_short,
+		  (localtime) [5] + 1900,
+		  "MODEM 101",
+		  "DATA",
+		  sprintf ("This file contains automatically generated data for %s.", $structname)
+		 );
+
+	print OFILE "\n#ifndef _DATA_" . $output_file_define . "\n";
+	print OFILE "#define _DATA_" . $output_file_define . "\n";
+	print OFILE "#include \"data/sections.h\"\n";
+
+	print OFILE "\n/* ************************************************************************* */\n";
+
+	$previous = 0;
+	for $cur_data_type (keys %type_suffix) {
+# This eliminates empty structures
+		if ($contains_data{$cur_data_type}) {
+			if ($previous) {
+				print OFILE "/* ************************************************************************* */\n";
+				print OFILE "/* ************************************************************************* */\n";
+				print OFILE "/* ************************************************************************* */\n";
+				print OFILE "/* ************************************************************************* */\n";
+				print OFILE "/* ************************************************************************* */\n";
+			}
+
+			print OFILE "$struct_string{$cur_data_type}$define_string{$cur_data_type}\n";
+#			print OFILE "/* ************************************************************************* */\n";
+
+			$previous = 1;
+		}
+
+	}
+
+	print OFILE "/* ************************************************************************* */\n";
+
+	print OFILE "\n#endif /* _DATA_" . $output_file_define . " */\n";
+	close (OFILE);
+
+	## ######################################################################### ##
+
+	#deal with filling the mc data files (data/mc#data.h)
+	if ($multichannel_build) {
+
+		undef $/;
+		foreach $pointer (keys %MC_hash) {
+			$filename = $pointer;
+#    		print "********** $pointer \n$MC_hash{$pointer} \n";
+			$filename =~ s/mvp(.*)/data\/mc$1data\.h/;
+#    		print "filename is [$filename]\n";
+			open (FILE,"<$filename");
+			$file_contents = <FILE>;
+			close (FILE);
+
+			if (!($file_contents =~ m|\n/\*\- MAKEMC Begin \-\*/|)) {
+				print "failed find MAKEMC Begin in file $filename ($pointer) <mkdata.prl>\n";
+				next;
+			}
+
+			if ($file_contents =~ s|(\n/\*\- MAKEMC Begin \-\*/)([\s\S]*)(/\*\- MAKEMC End \-\*/\C?\n)|\1\2$MC_hash{$pointer}\n\n\3|) {
+				$file_contents =~ s|\nint unused\;\n||;
+				open (FILE,">$filename");
+				print FILE $file_contents;
+				close (FILE);
+#    			print $file_contents;
+			}
+		}
+	}
+
+
+## ######################################################################### ##
+##
+ #	Entry Routine: load_full_data_list
+ #
+ #	Read from $filename (a data.src file) and load the var_list with
+ #	$data_type, $head, $var, $tail and $comment
+ #
+ #
+ #	Parameters:
+ #		Filename to read from.
+ #
+ #	Returns:
+ #		None.
+ #
+ #	Globals Affected:
+ #		"%var_list"		is loaded.
+ #
+
+	sub load_full_data_list
+	{
+		my($filename) = @_;
+		my($filedata);
+		my(@filedata_list);
+		my($index) = 0;
+
+		open (DATALIST, $filename) || return print "\nmkdata.prl: FAILED opening DATALIST file $filename\n";
+		{
+			local $/;
+			$filedata = <DATALIST>;
+		}
+		close (DATALIST);
+		&strip ($filedata, "ii");
+		@filedata_list = split /\n/,$filedata;
+
+#		foreach (@filedata_list ) {
+#			#match  <dtype> (head, var, tail) comment
+#			if (m/((?:$dtype))\s*\(([^\/]*)\)(.*)/ ) {
+#				($head, $var, $tail) = split (/,/,$2,3);
+#				$data_type = lc($1);
+##				$comment = lc($3);
+#				$comment = $3;
+#
+#				# trim leading and trailing whitespace
+#				$head     =~ s/^\s*(\S.*\S)\s*$/\1/;
+#				$var      =~ s/^\s*(\S.*\S)\s*$/\1/;
+#				$tail     =~ s/^\s*(.*)\s*$/\1/;
+#				$tail     =~ s/\[/ \[/;
+#				$comment  =~ s/^\s*(\S.*\S)\s*$/\1/;
+		foreach $line (@filedata_list ) {
+			#match  <dtype> (head, var, tail) comment
+#			if ($line =~ m/[(\/\/.*)(\/\*.*\*\/)]/) {
+			$comment = "";
+			if ($line =~ m/((?:\/\/.*)|(?:\/\*.*\*\/))/) {
+				$comment = $1;
+				if ($comment =~ m|//(.*)|) {
+					$line =~ s|//.*||;
+				} else {
+					$line =~ s|/\*.*\*/||;
+				}
+#				print "$comment\n";
+			}
+
+#			if ($line =~ m/((?:$dtype))\s*\((.*)\)(.*)/ ) {
+			if ($line =~ m/((?:$dtype))\s*\((.*)\)/ ) {
+#			if (m/((?:$dtype))\s*\(([^\/]*)\)(.*)/ ) {
+				($head, $var, $tail) = split (/,/,$2,3);
+#				print "$head, $var, $tail\n";
+
+				$data_type = lc($1);
+#				$comment = lc($3);
+#				if ($comment eq "") {
+#					$comment = $3;
+#				}
+				# trim leading and trailing whitespace
+				$head     =~ s/^\s*(\S.*\S)\s*$/\1/;
+				$var      =~ s/^\s*(\S.*\S)\s*$/\1/;
+				$tail     =~ s/^\s*(.*)\s*$/\1/;
+				$tail     =~ s/\[/ \[/;
+				$comment  =~ s/^\s*(\S.*\S)\s*$/\1/;
+				$index++;
+				# print "*[".$data_type."[".$head."][".$var."][". $tail."][".$comment."]\n";
+				$var_list {$var} = [($data_type, $head, $var, $tail, $comment, $index)] ;
+			}
+		}
+	}
+	## ######################################################################### ##
+
+	sub byindex
+	{
+		$var_list {$a}[5] <=> $var_list {$b}[5];
+	}
+
+
+## ######################################################################### ##
+##
+ #	Entry Routine: load_struct_map
+ #
+ #	Read from $filename (a structmap.src file) and load the var_list with
+ #	$data_type, $head, $var, $tail and $comment
+ #
+ #
+ #	Parameters:
+ #		Filename to read from.
+ #
+ #	Returns:
+ #		None.
+ #
+ #	Globals Affected:
+ #		"%var_list"		is loaded.
+ #
+
+
+#		Try to build mc hash here		$MC_hash {$structure_pointer} .=  "\n$UCstructname{$cur_data_type}_DATA;";
+
+
+	sub load_struct_map
+	{
+		my($filename) = @_;
+		my($filedata);
+		my(@filedata_list);
+		my($index) = 0;
+		my(@current_union_string) = ();
+		my($union_cnt) = 1;
+		my($current_union_mem);
+
+		open (DATALIST, $filename) || die "\nmkdata.prl: FAILED opening DATALIST file $filename\n";
+		{
+			local $/;
+			$filedata = <DATALIST>;
+		}
+		close (DATALIST);
+		&strip ($filedata);
+		rmcommnt ($filedata);
+
+		@filedata_list = split /\n/,$filedata;
+
+		foreach (@filedata_list ) {
+			#match  mem_define(A, B, C)
+			if (m/mem_define\(([_a-zA-Z0-9]+)[,\s]+([_a-zA-Z0-9]+)[,\s]+([_a-zA-Z0-9]+)\s*\)/ ) {
+				$mem_to_pointer{$1} = $3;
+				$mem_to_structure{$1} = $2;
+				next;
+			}
+
+			if (m/GROUP_END/ ) {
+				pop @current_union_string;
+				next;
+			}
+
+			if (m/UNION_END/ ) {
+				pop @current_union_string;
+				next;
+			}
+
+			if (m/UNION_START\s*([_a-zA-Z0-9]+)?/ ) {
+				# a memory section specifier was found
+				if ($1) {
+					if ($#current_union_string >= 0) {
+						print "ERROR: specifying a memory section for union/group not at root level.\n";
+					}
+					$current_union_mem = $1;
+				}
+				push @current_union_string, "union_$union_cnt.";
+				$union_cnt++;
+				next;
+			}
+
+			if (m/GROUP_START\s*([_a-zA-Z0-9]+)?/) {
+				if ($1) {
+					if ($#current_union_string >= 0) {
+						print "ERROR: specifying a memory section for union/group not at root level.\n";
+					}
+					$current_union_mem = $1;
+				}
+				push @current_union_string , "struct_$union_cnt.";
+				$union_cnt++;
+				next;
+			}
+
+			#match  default
+			if (m/\*([_a-zA-Z0-9]+)\s+([_a-zA-Z0-9]+)/ ) {
+				$structure_map{"*"}{$1} = $2;
+				$group_string{"*"}{$1} = "";
+				next;
+			}
+			#match  override  $1 = group, $2 = type, $3 = memory section
+
+			if (m/([_a-zA-Z0-9]+)\.([_a-zA-Z0-9]+)\s+([_a-zA-Z0-9]+)/ ) {
+				$structure_map{$1}{$2} = $3;
+				$group_string{$1}{$2} = "";
+				next;
+			}
+
+			# match a section in a group or union
+			if (m/([_a-zA-Z0-9]+)\.([_a-zA-Z0-9]+)/ ) {
+				$structure_map{$1}{$2} = $current_union_mem;
+
+				foreach $line (@current_union_string) {
+					$group_string{$1}{$2} .= $line;
+				}
+				next;
+			}
+		}
+
+		$filename =~ s/\..../\.ctl/;
+		open (DATALIST, ">$filename") || die "\nmkdata.prl: FAILED opening output structlist file $filename\n";
+		print DATALIST $filedata;
+		close (DATALIST);
+	}

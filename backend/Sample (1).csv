@@ -1,0 +1,10 @@
+Type,MimeType,Supplier,Author,Publisher,Group,Name,Version,Scope,LicenseExpressions,LicenseNames,Copyright,Cpe,Purl,Modified,SwidTagId,SwidName,SwidVersion,SwidTagVersion,SwidPatch,SwidTextContentType,SwidTextEncoding,SwidTextContent,SwidUrl,MD5,SHA-1,SHA-256,SHA-384,SHA-512,SHA3-256,SHA3-384,SHA3-512,BLAKE2b-256,BLAKE2b-384,BLAKE2b-512,BLAKE3,Description
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Library that provides UI controls and report generation functionality
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,The Apache log4net library is a tool to help the programmer output log statements to a variety of output targets.
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"jQuery is a fast, small, and feature-rich JavaScript library."
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Software development framework for building and running applications on Windows
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Relational database management system developed by Microsoft.
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Library for building interactive AJAX-enabled Web applications
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Database of English words that can be used to create word lists suitable for use in spell checkers
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Provides runtime components of Visual C++ libraries for software applications
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Includes capabilities for the management of certificates, certificate trust lists (CTLs), and certificate revocation lists (CRLs)"

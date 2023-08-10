@@ -1,0 +1,15 @@
+
+Reverse Bit Order:
+The order of the bits of the input data is reversed before including into 
+the CRC. This can be useful when CRCs are generated in comms protocols.
+
+Compliment CRC:
+The CRC is complimented after completion. Some CRC calculation standards 
+require this (HDLC for example). 
+
+Do Checksum Instead:
+A checksum is calculated instead of a CRC. Note that if you are using this 
+feature to generate a checksum to put into a PDS, a few settings must be 
+used to make it correct: 1) the address range must encompass the entire 
+program (i.e. include the CRC location). 2) the CRC seed value must be 0.
+3) Don’t check ‘Reverse Bit Order’, or ‘Compliment CRC’. 

@@ -1,0 +1,106 @@
+# file2dat.prl
+# this file takes an input file and creates a data and file struct file for inclusion later
+# -w word size in bytes
+
+$word_size = 1;
+$arg_count = 0;
+$cast_expression = "";
+$datfile = "";
+$fdsfile = "";
+$infile = "";
+# this loop has the limitation that we cannot put args at the end of the line, they
+# must come before the file list.
+while ($arg = shift) {
+#		print "\t\t\targ = $arg\n\n";
+	if ($arg =~ m/^\-(\S*)/) {
+		$opt = $1;
+		if (0) {
+		}
+		elsif ($opt eq "c") {
+			$cast_expression = "\(char \*\)";
+		}
+		elsif ($opt eq "w") {
+			$word_size = shift;
+			if ($word_size != 1 && $word_size != 2) {
+				$word_size = 1;
+			}
+		}
+		else {
+			print "\n\nWARNING: unrecognized flag\n\n";
+		}
+
+	} else {
+		if ($arg_count == 0) {
+			$datfile = $arg;
+#			print "datfile = $datfile\n\n";
+		}
+		elsif ($arg_count == 1) {
+			$fdsfile = $arg;
+#			print "fdsfile = $fdsfile\n\n";
+		}
+		elsif ($arg_count == 2) {
+			$infile = $arg;
+#			print "infile = $infile\n\n";
+		} else {
+			print "\n\nWARNING: too many args\n\n";
+		}
+		$arg_count++;
+	}
+
+	 if ($arg_count == 3) {
+		 last;
+	 }
+}
+
+#words vs bytes
+
+open (DATFILE, ">$datfile") || die "cannot open file $datfile\n\n";
+open (FDSFILE, ">$fdsfile") || die "cannot open file $fdsfile\n\n";
+
+$offset = 0;
+
+while ($infile) {
+	open (INFILE, $infile) || die "cannot open $infile\n";
+	$cnt = 0;
+
+# MUST GET CORRECT PADDING/BYTE ALIGNMENT - MAY SWITCH TO BINARY ON A BYTE BOUNDARY
+# DO THE WHOLE FILE IN BINARY MODE FOR NOW
+#	For compressed files, continue in binary mode after the file header
+		binmode INFILE;
+		while (read (INFILE, $temp, $word_size)) {  #how many bytes to read at a time
+			$cnt = $cnt + $word_size;
+			$word = unpack ("H*", $temp);
+			if ($word_size == 2) {
+				if ($word =~ m/[0-9a-zA-z][0-9a-zA-z][0-9a-zA-z][0-9a-zA-z]/) {
+				} else {
+					$word = $word."00";
+				}
+			}
+			printf (DATFILE "0x%s,\n", $word);
+		}
+
+	$infile =~ s/atarom[\\\/]//;
+	$infile =~ s/vidrom[\\\/]//;
+	if ($infile =~ m/\.cfg/) {
+		# add version to config file string
+		print FDSFILE "\{\"$infile\\0\"  ATA2CFG_VER, TRUE, 0, $cnt, 0, $cast_expression \(\(FILE_IMAGE_ADDRESS_FLASH \* $word_size\) + $offset\)\},\n";
+	} else {
+		print FDSFILE "\{\"$infile\", TRUE, 0, $cnt, 0, $cast_expression \(\(FILE_IMAGE_ADDRESS_FLASH \* $word_size\) + $offset\)\},\n";
+	}
+	$offset = $offset + $cnt;
+
+	close (INFILE);
+	$infile = shift;
+
+	# if we get args at this point the command line is probably wrong
+	if ($infile =~ m/-/) {
+		print "\n\nWARNING: flag after file list, not legal\n\n";
+	}
+
+}
+
+if ($hi == 0) {
+	printf DATFILE ("0x%04x,\n", $out);
+}
+close (DATFILE);
+close (FDSFILE);

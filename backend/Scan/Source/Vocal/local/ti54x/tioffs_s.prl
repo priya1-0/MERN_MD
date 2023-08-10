@@ -1,0 +1,172 @@
+#!/usr/bin/perl
+
+# cl500 -i. -i"c:\ti\c5400\cgtools\include" -c -q -pdw -k -mf -v549 -g x.c
+
+# ###################################################################### #
+# #
+  #
+# ###################################################################### #
+
+
+
+BEGIN {
+	push (@INC, "local", "../local"); # where to find vocal.pm
+	require vocal; import vocal;
+	require vocalmdm; import vocalmdm;
+}
+
+sub usage
+{
+	my ($retval) = (@_);
+	print STDERR "Usage: tioffst2.prl \n";
+	exit ($retval);
+}
+
+# ######################################################################## #
+
+# ###################################################################### #
+# #
+  #	Main Routine
+  #
+# #
+
+	$work_path = "work/";
+	$link_grp  = "arch/link_grp.src";
+
+	if (@ARGV != 1) {
+		usage (1);
+	}
+
+	$structure_parse_state = 0;
+
+	# 0 = looking for structure start
+	# 1 = parsing members
+	# 3 = looking for structure name
+
+
+	$cnt = 0;
+	$i = 0;
+	$num_structs = 0;
+	$unused = 0;
+	%element = ();
+	%struct_hash = ();
+	%ref_hash = ();
+	$valid_list = $vocal::valid_list;
+	$file = shift;
+	open (FILE, $file) or die "Can not open $file";
+	while ($cont = <FILE>) {
+
+# Create a list of all global variables so that we only .ref globals
+		if ($cont =~ m/\.global\s*_(\w*)\n/){
+			$ref_hash{$1} = $1;
+		}
+		#start of structure detected
+#		if ($cont =~ m/\.[s|u|e]tag/) { -dcs-
+#		if ($cont =~ m/\.[s|u]tag/) {
+
+# start of structure
+
+		if ( $structure_parse_state == 0 ) {  # STATE 0
+			if ($cont =~ m/\.stag/) { # this check only looks for structs, not unions or enums
+
+				#print "\nSTRUCTURE START\n";
+				$structure_parse_state = 1;
+				$found = 0;
+				$unused = 0;
+			}
+		} elsif ( $structure_parse_state == 1 ) { # STATE 1
+
+			if ($cont =~ m/\.member\t\_{1,3}([_a-zA-Z0-9]+)\,\s(\d+)\,/) {
+				$name = $1;
+				$size = $2;
+				$size /= 16;
+
+				if ($element{$name} != 0) {
+					print "\nDUPLICATE DEFININTION OF $name\n";
+				}
+				%element = (%element, $name => $size);
+				if($name !~ "unused"){
+					$element{$name} = $size;
+					#print sprintf ("\n [%4d]: %-40s offset: %d ", $cnt++, $name, $size);
+				}
+				else {
+					$unused = 1;
+					#print "\n[UNUSED]";
+				}
+			} else {
+				if ($cont =~ m/\.eos/) {
+					#print "\nfound EOS\n";
+					$structure_parse_state = 2;
+				}else {
+					#print "\n(skipping $cont)";
+				}
+			}
+
+		} elsif ( $structure_parse_state == 2 ) { # STATE 2
+			if (($cont =~ m/\.sym\s+\_(\w+)_t\,/) || ($cont =~ m/\.sym\s+\_(\w+)\,/)) {
+
+				$current = $1;
+				if( ( $unused == 0 ) && ($cont =~ m/\.*_(?:$valid_list)/) ){
+					$struct{$current} = $current;
+					$num_structs++;
+					$struct_hash{$current} = {%element};
+					%element = ();
+				}
+				else{
+					%element = ();
+				}
+				$structure_parse_state = 0;
+				#print "\nSTRUCTURE END $current\n";
+			} else {
+				#print "\nError: did not find struct\n";
+				%element = ();
+				if ($cont =~ m/\.stag/) {
+
+					#print "\nSTRUCTURE START\n";
+					$structure_parse_state = 1;
+					$found = 0;
+					$unused = 0;
+				}
+			}
+		}
+	}
+	close (FILE);
+
+#updating structures and variables for creating assembly offsets
+	$buffer = "";
+	$count = 1;
+	foreach $s (keys %struct_hash){
+
+# don't .ref non-globals
+		next if !($ref_hash{$s} eq $s) ;
+
+		if( $count == $num_structs){
+			$buffer .= "$s";
+			$buffer2 .= "asm \(\"\t.ref\t_$s\"\);\n";
+		}
+		else{
+			$buffer .= "$s|";
+			$buffer2 .= "asm \(\"\t.ref\t_$s\"\);\n";
+		}
+		$count++;
+
+		next if $s eq "";
+		foreach $n (keys %{ $struct_hash{$s} } ){
+			next if $n eq "";
+#the :0 here is just a place holder, it should be the structure size to match the mc version
+			$buffer3 .= "$s:$n:$struct_hash{$s}{$n}:0\n";
+		}
+	}
+
+	open (FILE2, ">data/offsets.cat") or die "Can not open offsets.cat";
+	print FILE2 $buffer;
+	print FILE2 "\n";
+	print FILE2 $buffer3;
+	close (FILE2);
+
+	open (FILE2, ">data/asm_refs.h") or die "Can not open asm_refs.h";
+	print FILE2 $buffer2;
+	close (FILE2);
+
+
+# ###################################################################### #

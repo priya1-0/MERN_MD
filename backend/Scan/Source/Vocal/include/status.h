@@ -1,0 +1,617 @@
+
+/* ************************************************************************* */
+/*
+ *	status.h
+ *
+ *	(C) 1994 - 2006 VOCAL Technologies, Ltd.
+ *
+ *	ALL RIGHTS RESERVED.  PROPRIETARY AND CONFIDENTIAL.
+ *
+ *	VOCAL Technologies, Ltd.
+ *	90A John Muir Drive.
+ *	Buffalo, NY  14228
+ *
+ *	Product:	MODEM 101
+ *
+ *	Module:		INCLUDE
+ *
+ *	Define status event specific codes.
+ *
+ *	Revision Number:	$Revision$
+ *	Revision Status:	$State$
+ *	Last Modified:		$Date$
+ *	Identification:		$Id$
+ *
+ *	Revision History:	$Log$
+ *	Revision History:	Revision 1.1.24.1  2009/04/28 19:50:33  zhangn1
+ *	Revision History:	SCR #173564. 2490H Vocal upgrade to Rev 4.56C
+ *	Revision History:	
+ *
+ */
+/* ************************************************************************* */
+
+#ifndef _INCLUDE_STATUS_H
+#define _INCLUDE_STATUS_H
+
+/* ************************************************************************* */
+/*
+ *	Define event/status types and mask
+ *
+ *	Bits 14 and 13 of the event/status type are used in the following combinations
+ *
+ *	14	13	Produced by				Used by					Notes
+ *	0	0	Pump/Controller/Host	Pump					Only these events are routed from controller to pump
+ *	0	1	Pump					Pump/Controller/Host
+ *	1	0	Pump/Controller			Controller/Host			Status codes with associated data
+ *	1	1	Controller/Host			Controller/Host
+ *
+ */
+#define STATUS__MASK							0x07ff	/* Status numbers unique by this mask only! */
+
+#define ST__V59_REPORT							0x0800	/* V.59 information reports */
+#define ST__API									0x1000	/* Minimal status reports */
+#define ST__STATUS								0x4000	/* Normal status reports */
+#define ST__PERIODIC							0x8000	/* Periodic status reports */
+
+/* ************************************************************************* */
+/*
+ *	Define system status codes
+ *
+ */
+#define STATUS__FAX_MODULATION_CODE				0x03f + ST__STATUS + ST__API
+#define STATUS__SPEED_SELECT					0x040 + ST__STATUS + ST__API
+#define STATUS__TONE_DETECT						0x041 + ST__STATUS
+#define STATUS__TRAINING_REPORT_1				0x042 + ST__STATUS
+#define STATUS__TRAINING_REPORT_2				0x043 + ST__STATUS
+#define STATUS__CONNECTION_REPORT_1				0x044 + ST__STATUS
+#define STATUS__CONNECTION_REPORT_2				0x045 + ST__STATUS
+#define STATUS__CONNECTION_END_REPORT_1			0x046 + ST__STATUS
+#define STATUS__CONNECTION_END_REPORT_2			0x047 + ST__STATUS
+#define STATUS__MSE_REPORT						0x048 + ST__PERIODIC + ST__STATUS
+#define STATUS__LOAD_OVERLAY					0x049 + ST__STATUS + ST__API
+#define STATUS__DTMF_DETECTED					0x04a + ST__STATUS + ST__API
+#define STATUS__DTMF_DETECT_END					0x04b + ST__STATUS
+#define STATUS__MF_DETECTED						0x04c + ST__STATUS + ST__API
+#define STATUS__MF_DETECT_END					0x04d + ST__STATUS + ST__API
+#define STATUS__V8_CALL_FUNCTION				0x04e + ST__STATUS + ST__API
+#define STATUS__TX_SPEED						0x04f + ST__STATUS + ST__API
+
+#define STATUS__VPCM_TX_ATTENUATION				0x050 + ST__STATUS + ST__API
+#define STATUS__VPCM_TX_RBS						0x051 + ST__STATUS + ST__API
+#define STATUS__VPCM_V90_MODE					0x052 + ST__STATUS
+#define STATUS__VPCM_K56_MODE					0x053 + ST__STATUS
+#define	STATUS__V24_LOOP2_ON					0x054 + ST__STATUS + ST__API
+#define STATUS__VPCM_RX_ATTENUATION				0x055 + ST__STATUS + ST__API
+#define STATUS__VPCM_RX_RBS						0x056 + ST__STATUS + ST__API
+#define STATUS__VPCM_TX_STATE					0x057 + ST__STATUS
+#define STATUS__VPCM_RX_STATE					0x058 + ST__STATUS
+#define STATUS__VPCM_TX_CONSTELLATION			0x059 + ST__STATUS
+#define STATUS__VPCM_RX_CONSTELLATION			0x05a + ST__STATUS
+
+#define STATUS__AGC1_GAIN						0x05b + ST__STATUS
+#define STATUS__AGC1_EXPONENT					0x05c + ST__STATUS
+#define STATUS__AGC2_GAIN						0x05d + ST__STATUS
+#define STATUS__AGC2_EXPONENT					0x05e + ST__STATUS
+
+#define STATUS__V34_PH2_ROUND_TRIP_DELAY		0x05f + ST__STATUS + ST__API
+#define STATUS__V34_TX_ATTENUATION				0x060 + ST__STATUS + ST__API
+#define STATUS__V34_TX_REQUIRED_ATTENUATION		0x061 + ST__STATUS + ST__API
+#define STATUS__V34_TX_OPTIONAL_ATTENUATION		0x062 + ST__STATUS + ST__API
+#define STATUS__V34_RX_ATTENUATION				0x063 + ST__STATUS + ST__API
+#define STATUS__V34_RX_REQUIRED_ATTENUATION		0x064 + ST__STATUS + ST__API
+#define STATUS__V34_RX_OPTIONAL_ATTENUATION		0x065 + ST__STATUS + ST__API
+
+#define STATUS__V32_TX_RATE_MASK				0x066 + ST__STATUS + ST__API
+#define STATUS__V32_RX_RATE_MASK				0x067 + ST__STATUS + ST__API
+#define STATUS__V32_RESTRICT_MASK				0x068 + ST__STATUS + ST__API
+#define STATUS__V32_FINAL_RATE_MASK				0x069 + ST__STATUS + ST__API
+
+#define STATUS__MSE_REPORT_TRAINING				0x06a + ST__PERIODIC + ST__STATUS
+#define STATUS__MSE_REPORT_MAXRATE				0x06b + ST__PERIODIC + ST__STATUS
+
+#define STATUS__MP_FRAME_WORD					0x06c + ST__STATUS
+
+#define STATUS__V34_TRN1_MSE					0x06d + ST__STATUS + ST__API
+#define STATUS__V34_CONV_MSE					0x06e + ST__STATUS + ST__API
+#define STATUS__V34_TRN2_MSE					0x06f + ST__STATUS + ST__API
+
+#define	STATUS__LPF_REPORT_TRN1A				0x070 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_TRN1B				0x071 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_TRN1C				0x072 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_TRN2A				0x073 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_TRN2B				0x074 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_ECHO					0x075 + ST__PERIODIC + ST__STATUS
+#define	STATUS__LPF_REPORT_DATA					0x076 + ST__PERIODIC + ST__STATUS
+
+#define STATUS__PARAMETER_REPORT				0x077 + ST__STATUS
+#define STATUS__MP_TX_FRAME_WORD				0x078 + ST__STATUS
+#define STATUS__V92_NEGOTIATIONS				0x079 + ST__STATUS
+
+#define STATUS__V34_PH2_ANAL_DATA				0x07a + ST__STATUS
+#define STATUS__V34_RX_SYMBOL_RATE				0x07b + ST__STATUS
+#define STATUS__V34_RX_CARRIER					0x07c + ST__STATUS
+#define STATUS__V34_RX_PREEMPH					0x07d + ST__STATUS
+#define STATUS__V34_TABLE_INDEX					0x07e + ST__STATUS
+
+#define	STATUS__POWER_TX_1						0x080 + ST__PERIODIC + ST__STATUS
+#define	STATUS__POWER_TX_2						0x081 + ST__PERIODIC + ST__STATUS
+#define	STATUS__POWER_RX_1						0x082 + ST__PERIODIC + ST__STATUS
+#define	STATUS__POWER_RX_2						0x083 + ST__PERIODIC + ST__STATUS
+
+#define STATUS__PMP_DATUM_A_REPORT				0x084 + ST__STATUS
+#define STATUS__PMP_DATUM_B_REPORT				0x085 + ST__STATUS
+#define STATUS__PMP_DATUM_C_REPORT				0x086 + ST__STATUS
+#define STATUS__PMP_DATUM_D_REPORT				0x087 + ST__STATUS
+
+#define	STATUS__V34_SETTINGS					0x088 + ST__STATUS
+#define STATUS__V34_PH3_SHOWCR					0x089 + ST__STATUS
+#define STATUS__V34_PH3_SHOW					0x08a + ST__STATUS
+#define STATUS__V34_PH3_SHOWI					0x08b + ST__STATUS
+
+#define	STATUS__MH_INFORMATION					0x08c + ST__STATUS
+#define	STATUS__MH_UNEXPECTED_TX				0x08d + ST__STATUS
+#define	STATUS__MH_UNEXPECTED_RX				0x08e + ST__STATUS
+/*#define	STATUS__							0x08f + ST__STATUS */
+
+#define STATUS__FIRMWARE_RELEASE				0x090 + ST__STATUS + ST__API
+#define STATUS__MINIMUM_CONFIG					0x091 + ST__STATUS
+#define STATUS__RECONFIG_IN_PROGRESS			0x092 + ST__STATUS
+#define STATUS__RECONFIG_COMPLETE				0x093 + ST__STATUS
+#define STATUS__SYMLIST_CHECKSUM				0x094 + ST__STATUS
+#define STATUS__MEMORY_READ						0x099 + ST__STATUS
+
+#define STATUS__MF_GENERATE						0x0a0 + ST__STATUS + ST__API
+/* Some codes used out of sequence below */
+
+#define STATUS__WATCHDOG_OK						0x0a9 + ST__STATUS + ST__API
+
+#define	STATUS__FB_ENERGY_REPORT_TRN2			0x0aa + ST__STATUS
+#define	STATUS__FB_ENERGY_REPORT_DATA			0x0ab + ST__STATUS
+#define	STATUS__DC_OFFSET_CORRECTION			0x0ac + ST__STATUS
+#define	STATUS__EC_ERROR_SUM					0x0ad + ST__STATUS
+#define	STATUS__EC_COEF_DUMP					0x0ae + ST__STATUS
+#define STATUS__PUMP_ANOMALY_REPORT				0x0af + ST__STATUS
+
+/* ************************************************************************* */
+
+#ifdef USE_OLD_STATUS_CODES
+#define STATUS__DTMF_B2_DETECTED			STATUS__CUSTOMER_GROUP + 1
+#define STATUS__DTMF_B2_DETECT_END			STATUS__CUSTOMER_GROUP + 2
+
+#define STATUS__FAXMON_V21_DATA_REPORT			0x7f1 + ST__STATUS
+#define STATUS__FAXMON_SCC_DATA_REPORT			0x7f2 + ST__STATUS
+#define STATUS__FAXMON_RCC_DATA_REPORT			0x7f3 + ST__STATUS
+
+#else /* USE_OLD_STATUS_CODES */
+#define STATUS__DTMF_B2_DETECTED				0x0a1 + ST__STATUS
+#define STATUS__DTMF_B2_DETECT_END				0x0a2 + ST__STATUS
+
+#define STATUS__FAXMON_V21_DATA_REPORT			0x0a3 + ST__STATUS
+#define STATUS__FAXMON_SCC_DATA_REPORT			0x0a4 + ST__STATUS
+#define STATUS__FAXMON_RCC_DATA_REPORT			0x0a5 + ST__STATUS
+#endif /* USE_OLD_STATUS_CODES */
+
+/* ************************************************************************* */
+/*
+ *	Controller diagnostic status codes
+ *
+ */
+#define STATUS__OMC_STATE_REPORT				0x0b0 + ST__STATUS
+#define STATUS__OMC_ANOMALY_REPORT				0x0b1 + ST__STATUS
+#define STATUS__CSC_STATE_REPORT				0x0b2 + ST__STATUS
+#define STATUS__CSC_ANOMALY_REPORT				0x0b3 + ST__STATUS
+#define STATUS__DP_STATE_REPORT					0x0b4 + ST__STATUS
+
+#define STATUS__STATE_REPORT_DATA				0x0b7 + ST__STATUS
+
+#define STATUS__OMC_DATUM_A_REPORT				0x0b8 + ST__STATUS
+#define STATUS__OMC_DATUM_B_REPORT				0x0b9 + ST__STATUS
+#define STATUS__OMC_DATUM_C_REPORT				0x0ba + ST__STATUS
+#define STATUS__OMC_DATUM_D_REPORT				0x0bb + ST__STATUS
+#define STATUS__CSC_DATUM_A_REPORT				0x0bc + ST__STATUS
+#define STATUS__CSC_DATUM_B_REPORT				0x0bd + ST__STATUS
+#define STATUS__CSC_DATUM_C_REPORT				0x0be + ST__STATUS
+#define STATUS__CSC_DATUM_D_REPORT				0x0bf + ST__STATUS
+
+#define STATUS__V8BIS_DATUM_TX_REPORT			0x0c0 + ST__STATUS
+#define STATUS__V8BIS_DATUM_RX_REPORT			0x0c1 + ST__STATUS
+#define STATUS__V8_DATUM_TX_REPORT				0x0c2 + ST__STATUS
+#define STATUS__V8_DATUM_RX_REPORT				0x0c3 + ST__STATUS
+
+#define STATUS__V8_STATE_REPORT					0x0c4 + ST__STATUS
+#define STATUS__V8BIS_STATE_REPORT				0x0c5 + ST__STATUS
+#define STATUS__V54_STATE_REPORT				0x0c6 + ST__STATUS
+#define STATUS__RDL_STATE_REPORT				0x0c7 + ST__STATUS
+#define STATUS__CID_GEN_STATE_REPORT			0x0c8 + ST__STATUS
+#define STATUS__PH2_STATE_REPORT				0x0c9 + ST__STATUS
+#define STATUS__V34_STATE_REPORT				0x0ca + ST__STATUS
+
+/*	These may be defined as needed
+#define STATUS__PUMP_STATE_REPORT				0x0cb + ST__STATUS
+#define STATUS__PUMP_STATE_REPORT				0x0cc + ST__STATUS
+#define STATUS__PUMP_STATE_REPORT				0x0cd + ST__STATUS
+#define STATUS__PUMP_STATE_REPORT				0x0ce + ST__STATUS
+#define STATUS__PUMP_STATE_REPORT				0x0cf + ST__STATUS
+*/
+
+#define STATUS__OMC_DISCONNECT_REASON			0x0d0 + ST__STATUS
+#define STATUS__DP_DISCONNECT_REASON			0x0d1 + ST__STATUS
+#define STATUS__DP_DISCONNECT_SUBREASON			0x0d2 + ST__STATUS
+#define STATUS__T30_DISCONNECT_REASON			0x0d3 + ST__STATUS
+#define STATUS__AD_DETECT						0x0d4 + ST__STATUS
+#define STATUS__FAXDET_DETECT					0x0d5 + ST__STATUS
+#define STATUS__KB_CHARACTER_REPORT				0x0d6 + ST__STATUS
+#define STATUS__T30_FRAME_REPORT				0x0d7 + ST__STATUS
+#define STATUS__DP_TX_DF_RETX					0x0d8 + ST__STATUS
+#define STATUS__DP_RX_DF_RETX					0x0d9 + ST__STATUS
+#define STATUS__SCC_DETECT						0x0da + ST__STATUS
+#define STATUS__FRAME_REPORT					0x0db + ST__STATUS
+#define STATUS__T38_FRAME_REPORT				0x0dc + ST__STATUS
+#define STATUS__T38_DATA_FIELD_REPORT			0x0dd + ST__STATUS
+#define STATUS__RTMSC_AUDIO_REPORT				0x0de + ST__STATUS
+#define STATUS__FRAME_DETAIL_REPORT				0x0df + ST__STATUS
+
+#define STATUS__TSSC_DISCONNECT_REASON			0x0e0 + ST__STATUS + ST__API
+#define STATUS__OMC_IRSP_PROTOCOL				0x0e1 + ST__STATUS + ST__API
+#define STATUS__OMC_IRSP_COMPRESSION			0x0e2 + ST__STATUS + ST__API
+
+#define STATUS__T38_REPORT						0x0f0 + ST__STATUS
+#define STATUS__T30_STATE_REPORT				0x0f1 + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *  Define IPBX/SLAC status codes
+ *
+ */
+#define STATUS__IPBX_STATE						0x100 + ST__STATUS
+#define STATUS__IPBX_SUB_STATE					0x101 + ST__STATUS
+#define STATUS__IPBX_DEV_STATE					0x102 + ST__STATUS
+#define STATUS__IPBX_UICP_STATE					0x103 + ST__STATUS
+#define STATUS__IPBX_PICP_STATE					0x104 + ST__STATUS
+#define STATUS__IPBX_OICP_STATE					0x105 + ST__STATUS
+
+#define STATUS__IPBX_DEV_TYPE					0x107 + ST__STATUS
+
+#define STATUS__IPBX_DEV_ERROR					0x108 + ST__STATUS
+#define STATUS__SLAC_REVISION_CODE				0x109 + ST__STATUS
+
+#define STATUS__IPBX_DEV_KEY_ENCODED			0x10a + ST__STATUS
+#define STATUS__IPBX_DEV_KEY_MASK				0x10b + ST__STATUS
+
+#define STATUS__IPBX_CID_RX_DATA_REPORT			0x10c + ST__STATUS
+
+#define STATUS__VPPN_DEV_STATE					0x110 + ST__STATUS
+#define STATUS__VPPN_ROM_ID						0x111 + ST__STATUS
+#define STATUS__VPPN_EEPROM_ID					0x112 + ST__STATUS
+#define STATUS__VPPN_FIRMWARE_ID				0x113 + ST__STATUS
+#define STATUS__VPPN_MANUFACTURER_ID			0x114 + ST__STATUS
+#define STATUS__VPPN_TEMPORARY_ID				0x115 + ST__STATUS
+#define STATUS__VPPN_REGISTRATION_ID			0x116 + ST__STATUS
+#define STATUS__VPPN_MASTER_FIRMWARE_ID			0x117 + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *  Define kernel diagnostic status codes
+ *
+ */
+#define STATUS__FG_EVENT_PROCESSED				0x700 + ST__STATUS
+#define STATUS__FG_STATE_CHANGE					0x701 + ST__STATUS
+#define STATUS__FG_STATE_EVENT_SERVICE			0x702 + ST__STATUS
+#define STATUS__FG_STATE_START					0x703 + ST__STATUS
+#define STATUS__FG_STATE_RESTART				0x704 + ST__STATUS
+#define STATUS__FG_STATE_REPLACE				0x705 + ST__STATUS
+#define STATUS__FG_STATE_STOP					0x706 + ST__STATUS
+#define STATUS__FG_STATE_STOP_BY_OWNER			0x707 + ST__STATUS
+#define STATUS__FG_STATE_CLEAR_ALL				0x708 + ST__STATUS
+
+#define STATUS__FG_THREAD_INSERT				0x710 + ST__STATUS
+#define STATUS__FG_THREAD_REMOVE				0x711 + ST__STATUS
+#define STATUS__FG_THREAD_IDENT					0x712 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_ALL				0x713 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_MODULATION		0x714 + ST__STATUS
+#define	STATUS__FG_THREAD_CLEAR_BY_OWNER		0x715 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR					0x716 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_RX_MODULATION	0x717 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_TX_MODULATION	0x718 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_AUTOMODE		0x719 + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_FACSIMILE		0x71a + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_RX_DATA			0x71b + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_TX_DATA			0x71c + ST__STATUS
+#define STATUS__FG_THREAD_CLEAR_TELEPHONY		0x71d + ST__STATUS
+#define STATUS__FG_THREAD_REPORT				0x71e + ST__STATUS
+#define STATUS__FG_THREAD_ADDRESS				0x71f + ST__STATUS
+#define STATUS__FG_THREAD_EXTENDED_ADDRESS		0x70f + ST__STATUS
+
+#define STATUS__FG_TIMER_MS_START_1				0x720 + ST__STATUS
+#define STATUS__FG_TIMER_MS_START_2				0x721 + ST__STATUS
+#define STATUS__FG_TIMER_BIT_START_1			0x722 + ST__STATUS
+#define STATUS__FG_TIMER_BIT_START_2			0x723 + ST__STATUS
+#define STATUS__FG_TIMER_BAUD_START_1			0x724 + ST__STATUS
+#define STATUS__FG_TIMER_BAUD_START_2			0x725 + ST__STATUS
+#define STATUS__FG_TIMER_CLEAR_1				0x726 + ST__STATUS
+#define STATUS__FG_TIMER_CLEAR_2				0x727 + ST__STATUS
+#define STATUS__FG_TIMER_STOP					0x728 + ST__STATUS
+#define STATUS__FG_TIMER_CLEAR_ALL				0x729 + ST__STATUS
+
+#define STATUS__BG_EVENT_PROCESSED				0x730 + ST__STATUS
+#define STATUS__BG_STATE_CHANGE					0x731 + ST__STATUS
+#define STATUS__BG_STATE_EVENT_SERVICE			0x732 + ST__STATUS
+#define STATUS__BG_STATE_START					0x733 + ST__STATUS
+#define STATUS__BG_STATE_RESTART				0x734 + ST__STATUS
+#define STATUS__BG_STATE_REPLACE				0x735 + ST__STATUS
+#define STATUS__BG_STATE_STOP					0x736 + ST__STATUS
+#define STATUS__BG_STATE_STOP_BY_OWNER			0x737 + ST__STATUS
+#define STATUS__BG_STATE_CLEAR_ALL				0x738 + ST__STATUS
+
+#define STATUS__LOG_0							0x760 + ST__STATUS
+#define STATUS__LOG_1							0x761 + ST__STATUS
+#define STATUS__LOG_2							0x762 + ST__STATUS
+#define STATUS__LOG_3							0x763 + ST__STATUS
+#define STATUS__LOG_4							0x764 + ST__STATUS
+#define STATUS__LOG_5							0x765 + ST__STATUS
+#define STATUS__LOG_6							0x766 + ST__STATUS
+#define STATUS__LOG_7							0x767 + ST__STATUS
+#define STATUS__LOG_8							0x768 + ST__STATUS
+#define STATUS__LOG_9							0x769 + ST__STATUS
+#define STATUS__LOG_A							0x76a + ST__STATUS
+#define STATUS__LOG_B							0x76b + ST__STATUS
+#define STATUS__LOG_C							0x76c + ST__STATUS
+#define STATUS__LOG_D							0x76d + ST__STATUS
+#define STATUS__LOG_E							0x76e + ST__STATUS
+#define STATUS__LOG_F							0x76f + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *  Define kernel error codes
+ *
+ */
+#define STATUS__EVENT_BUFFER_OVERFLOW			0x770 + ST__STATUS
+#define STATUS__STATUS_BUFFER_OVERFLOW			0x771 + ST__STATUS
+#define STATUS__OVERLAY_CONFLICT				0x772 + ST__STATUS
+#define STATUS__NOT_ALIGNED						0x773 + ST__STATUS
+#define STATUS__FGTHREAD_ERROR					0x774 + ST__STATUS
+#define STATUS__DSP_PANIC_REPORT				0x775 + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *  Define V.59 status codes
+ *
+ */
+#define STATUS__V59_PHASE_RESTART				0x600 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RX_FRAME_END				0x601 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_TX_FRAME_END				0x602 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V34_TX_NOMINAL				0x603 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_ATTENUATION			0x604 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_POWER				0x605 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_OTHER_TX_NOMINAL			0x606 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_OTHER_TX_ATTENUATION		0x607 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_OTHER_TX_POWER				0x608 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_RX_SYMBOL_RATE				0x609 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_TX_SYMBOL_RATE				0x60a + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_RX_CARRIER_FREQUENCY		0x60b + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_TX_CARRIER_FREQUENCY		0x60c + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_ROUND_TRIP_DELAY			0x60e + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_DIGITAL_PAD_LOSS			0x60f + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RBS_PATTERN					0x610 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_CODEC_LAW					0x611 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V32_RX_RATE_SEQUENCE		0x612 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V32_TX_RATE_SEQUENCE		0x613 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V8_CI						0x614 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8_CM						0x615 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8_JM						0x616 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8_RESULT_CODE				0x617 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V92_QC1a					0x618 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QC1d					0x619 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QC2a					0x61a + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QC2d					0x61b + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QCA1a					0x61c + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QCA1d					0x61d + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QCA2a					0x61e + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QCA2d					0x61f + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_QCxx		/* ?? */	0x61f + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V34_RX_INFO0a				0x620 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO0c				0x621 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO0h				0x622 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO0r				0x623 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO0s				0x624 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO1a				0x625 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_INFO1c				0x626 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_MP0					0x627 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_MP1					0x628 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_RX_PRECODER				0x629 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V34_TX_INFO0a				0x630 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO0c				0x631 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO0h				0x632 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO0r				0x633 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO0s				0x634 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO1a				0x635 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_INFO1c				0x636 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_MP0					0x637 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_MP1					0x638 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V34_TX_PRECODER				0x639 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V90_RX_CP					0x640 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_CPt					0x641 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_INFO0d				0x642 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_INFO1a				0x643 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_INFO1d				0x644 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_Ja					0x645 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_Jd					0x646 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_MP0					0x647 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_MP1					0x648 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_RX_PRECODER				0x649 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V90_TX_CP					0x650 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_CPt					0x651 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_INFO0d				0x652 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_INFO1a				0x653 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_INFO1d				0x654 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_Ja					0x655 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_Jd					0x656 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_MP0					0x657 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_MP1					0x658 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V90_TX_PRECODER				0x659 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V92_RX_CPd					0x660 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_CPt /*not used yet*/	0x661 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_CPu					0x662 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_CPus					0x663 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_INFO1a				0x664 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_Ja					0x665 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_Jd					0x666 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_Jp					0x667 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_MH					0x668 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_SUVd					0x669 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_RX_SUVu					0x66a + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V92_TX_CPd					0x670 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_CPt					0x671 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_CPu					0x672 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_CPus					0x673 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_INFO1a				0x674 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_Ja					0x675 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_Jd					0x676 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_Jp					0x677 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_MH					0x678 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_SUVd					0x679 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V92_TX_SUVu					0x67a + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_K56_RX_Ja					0x680 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_RX_MP0					0x681 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_RX_MP1					0x682 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_RX_PRECODER				0x683 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_K56_TX_Ja					0x688 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_TX_MP0					0x689 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_TX_MP1					0x68a + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_K56_TX_PRECODER				0x68b + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_RX_DIGITAL_PAD_LOSS			0x68c + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RX_RBS_PATTERN				0x68d + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_TX_DIGITAL_PAD_LOSS			STATUS__V59_DIGITAL_PAD_LOSS
+#define STATUS__V59_TX_RBS_PATTERN				STATUS__V59_RBS_PATTERN
+
+#define STATUS__V59_RETRAIN_REQUEST				0x690 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RENEGOTIATE_REQUEST			0x691 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RETRAIN_SUCCESS				0x692 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_RENEGOTIATE_SUCCESS			0x693 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_CALL_PROG_RESULT			0x694 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_DISCONNECT_REASON			0x695 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_ERROR_CONTROL_PROTOCOL		0x698 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42_RX_FRAME_SIZE			0x699 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42_TX_FRAME_SIZE			0x69a + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42_RX_WINDOW_SIZE			0x69b + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42_TX_WINDOW_SIZE			0x69c + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_COMP_NEG_RESULT				0x6a0 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42BIS_P0					0x6a1 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42BIS_P1					0x6a2 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V42BIS_P2					0x6a3 + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V44_P0						0x6a8 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P1T						0x6a9 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P2T						0x6aa + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P3T						0x6ab + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P1R						0x6ac + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P2R						0x6ad + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V44_P3R						0x6ae + ST__STATUS + ST__V59_REPORT
+
+#define STATUS__V59_V8bis_TRANS					0x6b0 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_MR_TYPE				0x6b1 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_MR_SEQ				0x6b2 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_CR_TYPE				0x6b3 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_CR_SEQ				0x6b4 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_CL_SEQ				0x6b5 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_CLR_SEQ				0x6b6 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_ES_TYPE				0x6b7 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_ES_SEQ				0x6b8 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_ACK					0x6b9 + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_NAK					0x6ba + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_MS_SEQ	/* new */	0x6bb + ST__STATUS + ST__V59_REPORT
+#define STATUS__V59_V8bis_QC_SEQ	/* new */	0x6bc + ST__STATUS + ST__V59_REPORT
+
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+
+/* ************************************************************************* */
+/*
+ *	RTP/VIDEO status codes
+ *
+ */
+#define STATUS__RTP_REPORT						0x6c0 + ST__STATUS
+#define STATUS__RTP_EXPIRED_REPORT				0x6c1 + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *	H223 status codes
+ *
+ */
+#define STATUS__H223_MUX_LEVEL_DET				0x6e1 + ST__STATUS
+#define	STATUS__H223_MPLX_ENTRY					0x6e2 + ST__STATUS
+#define STATUS__H223_BIT_ALIGNEMENT				0x6e4 + ST__STATUS
+#define STATUS__H223_FRAME_LOST_CODE			0x6e7 + ST__STATUS
+#define STATUS__H223_AL_RX_ERROR				0x6e8 + ST__STATUS
+#define	STATUS__H223_AL_RX_GET_SN				0x6e9 + ST__STATUS
+#define	STATUS__H223_LCN_REPORT					0x6ea + ST__STATUS
+#define	STATUS__H223_LO_MUX_LEVEL_DET			0x6eb + ST__STATUS
+#define	STATUS__H223_HI_MUX_LEVEL_DET			0x6ec + ST__STATUS
+#define	STATUS__H223_DMX_INFO_TOO_LONG			0x6ed + ST__STATUS
+#define	STATUS__H223_AL3_RX_SREJ				0x6ee + ST__STATUS
+
+#define	STATUS__H223_RX_AL_BUFFER_ROOM			0x6ef + ST__STATUS
+#define	STATUS__H223_RX_MUX_BUFFER_ROOM			0x6f0 + ST__STATUS
+#define	STATUS__H223_RX_AL_TABLE_FRAMES			0x6f1 + ST__STATUS
+#define	STATUS__H223_RX_MUX_TABLE_FRAMES		0x6f2 + ST__STATUS
+#define	STATUS__H223_RX_AL_FRAME_SIZE			0x6f3 + ST__STATUS
+
+#define STATUS__H223_BG_TASK_BLOCK				0x6f4 + ST__STATUS
+#define STATUS__H223_BG_TASK_UNBLOCK			0x6f5 + ST__STATUS
+
+#define	STATUS__H223_DMX_RECOVERY				0x6f6 + ST__STATUS
+#define	STATUS__H223_DMX_REPORT					0x6f7 + ST__STATUS
+
+#define STATUS__H223_CHAN_STAT_RATE				0x6f8 + ST__STATUS
+
+#define	STATUS__H223_BIT_REV_REPORT				0x6fa + ST__STATUS
+
+#define STATUS__RTP_VID_ENC_MBX_USE_CNT			0x6fb + ST__STATUS
+#define STATUS__H223_STREAM_GO_INFO				0x6fc + ST__STATUS
+
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* ************************************************************************* */
+
+/* ************************************************************************* */
+/*
+ *	Developer temporary status codes
+ *
+ */
+#define STATUS__DEVELOPER_GROUP					0x780 + ST__STATUS
+
+/* ************************************************************************* */
+/*
+ *	Customer status codes
+ *
+ */
+#define STATUS__CUSTOMER_GROUP					0x7f0 + ST__STATUS
+
+/* ************************************************************************* */
+
+#endif /* _INCLUDE_STATUS_H */

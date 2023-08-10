@@ -1,0 +1,440 @@
+#!/usr/bin/perl
+#Updated Revision 1.0 for Windows XP
+#use vocal;
+BEGIN {
+	push (@INC, "local", "../local", "w:/utility/tools", "c:/apps/bin");
+	require vocal; import vocal;
+
+	# dredge out the OS type for later use
+	# win9x based OS returns "" , nt based returns "Windows_NT", linux returns linux-gnu
+	$os_name = $ENV{OS};
+	if($os_name eq "") {
+		# if this isnt working on your linux system you might have to export OSTYPE
+		$os_name = $ENV{OSTYPE};
+	}
+	if($os_name eq "") {
+		# if this isnt working on your linux system you might have to export OSTYPE
+		# print "\n(If running under linux, make sure you have OSTYPE exported)";
+		$os_name = "Windows_98";
+	}
+	# print "\nGot os type $os_name.\n";
+}
+
+BEGIN {
+	if($os_name eq "linux-gnu") {
+		require Cwd; import Cwd;
+	}
+	elsif($os_name eq "linux") {
+		require Cwd; import Cwd;
+	}
+	elsif($os_name eq "cygwin") {
+		#
+	}
+	else {
+		*{"main::getcwd"} = \&{"Dos::GetCwd"}; # for djgpp version, use below otherwise
+	}
+}
+
+sub usage
+{
+	my ($retval) = @_;
+	print "Usage: perl mkheader.prl [-c+] [-local #]\n";
+	print "-c+ = c++ mode\n";
+	print "-local # = local variable storage class specifier where # is\n";
+	print "0 = extern\n";
+	print "1 = static\n";
+	print "2 = <nothing>\n";
+	print "3 = extern static\n";
+	print "4 = commented out\n";
+	print "-noifdefs - turn off ifdefs";
+
+	exit ($retval);
+}
+
+
+undef $/; # slurp entire files
+&set_print_debug_level (0);
+
+# Get current date/time
+($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+$current_date = sprintf ("%02u/%02u/%04u", $mon + 1, $mday, $year + 1900);
+$current_time = sprintf ("%02u:%02u:%02u", $hour, $min, $sec);
+
+# Setup constants
+$comment_line = "/* ************************************************************************* */";
+
+if($os_name eq "cygwin") {
+	$this_dir = `pwd`; chop $this_dir;
+} else {
+	$this_dir = main::getcwd;
+}
+$root_path = "..";
+
+# Process options
+$cplus_mode = 0;
+$local_var_mode = 0;
+$ifdefmode = 0;
+
+while ($ARGV[0] =~ m/^-(\S+)/) {
+	$arg = shift;
+	if ($arg =~ m/^-c+/i) {
+		$cplus_mode = 1;
+	}
+	elsif ($arg =~ m/^-local/i) {
+		$local_var_mode = shift;
+	}
+	elsif ($arg =~ m/^-noifdefs/i) {
+		$ifdefmode = 1;
+	}
+	elsif ($arg =~ m/^-h/i) {
+		&usage (0);
+	}
+	else {
+		print STDERR "Unrecognized flag \"$arg\"\n\n";
+	}
+}
+
+#determines which hfile - module or local
+%xlate_hdr_type =
+(
+	"LOCAL"		=> "localfile",
+	"MODULE"	=> "localfile",
+	"THREAD"	=> "localfile",
+	"GLOBAL"	=> "modulefile",
+	"ENTRY"		=> "modulefile",
+);
+
+
+%scope_types =
+(
+ "localfile" => ["MODULE", "THREAD","LOCAL"],
+ "modulefile" => ["GLOBAL", "ENTRY"],
+);
+#
+# in the 55x compiler, declaring a static variable and then defining it later gives
+# a warning, but does not export the variable.  Some compilers may allow extern static for
+# this purpose, others may require only extern in the declaration, this may cause problems
+# by not allowing us to create static state machines and put thier declarations in headers.
+#
+
+	$static_var_string =  "extern state_action_t %s [];\n";  # extern local state - default
+
+if ($local_var_mode == 0) {
+	$static_var_string =  "extern state_action_t %s [];\n";  # extern local state
+}
+elsif ($local_var_mode == 1) {
+	$static_var_string =  "static state_action_t %s [];\n";  # static local state
+}
+elsif ($local_var_mode == 2) {
+	$static_var_string =  "state_action_t %s [];\n";  # local state
+}
+elsif ($local_var_mode == 3) {
+	$static_var_string =  "extern static state_action_t %s [];\n";  # extern static local state
+}
+elsif ($local_var_mode == 4) {
+	$static_var_string =  "/* static state_action_t %s [];*/\n";  # commented out local state
+}
+
+%format_string =
+(
+"LOCAL" => {
+	"variable"	=> "extern %s;\n",
+	"state"		=> $static_var_string,
+	"routine"	=> "static %s;\n",
+},
+"GLOBAL" => {
+	"variable"	=> "extern %s;\n",
+	"state"		=> "extern state_action_t %s [];\n",
+	"routine"	=> "%s;\n",
+},
+"ENTRY" => {
+	"variable"	=> "extern %s;\n",
+	"state"		=> "extern state_action_t %s [];\n",
+	"routine"	=> "%s;\n",
+},
+"MODULE" => {
+	"variable"	=> "extern %s;\n",
+	"state"		=> "extern state_action_t %s [];\n",
+	"routine"	=> "%s;\n",
+},
+"NONE" => {
+	"variable"	=> "\n",
+	"state"		=> "\n",
+	"routine"	=> "\n",
+}
+);
+
+%search_string =
+(
+	"variable1"	=> qr"(LOCAL|MODULE|GLOBAL)\s+([\w\s\*\[\]]+)\s+=",				# Initialized data
+	"variable2"	=> qr"(LOCAL|MODULE|GLOBAL)\s+([\w\s\*\[\]]+);",				# Uninitialized data
+	"state"		=> qr"(LOCAL|MODULE|GLOBAL|ENTRY)\s+STATE_BEGIN\s*\((\w+)\)",	# Warn for ENTRY
+	# the \C near the end of this line gets rid of the ^M, needed under unix/linux
+	"routine"	=> qr"(LOCAL|MODULE|ENTRY|THREAD)\s+([\w \t\*\[\]]+\s+\w+\s*\(.*?\))\w*\C?\n",
+	# old style
+	#"routine"	=> qr"(LOCAL|MODULE|ENTRY|THREAD)\s+([\w \t\*\[\]]+\s+\w+\s*\(.*?\))\n",
+	# experimental
+	#"routine"	=> qr"^(LOCAL|MODULE|ENTRY|THREAD)(\s+\w+)*(\s*\[.*\])?\*?\s*^\w+\s*\(.*?\)\s*^{",
+);
+
+%header_string =
+(
+	"variable"	=> "Variables: */\n",
+	"state"		=> "States: */\n",,
+	"routine"	=> "Routines: */\n",,
+	"LOCAL"	=> "/* Local ",,
+	"THREAD"	=> "/* ",,
+	"MODULE"	=> "/* Module ",
+	"GLOBAL"	=> "/* Global ",
+	"ENTRY"	=> "/* Global ",
+	"NONE"	=> "/* ",
+);
+
+
+# Get current module
+if ($this_dir =~ m|(\w+)/?$|) {
+	$this_module = $1;
+}
+else {
+	die (sprintf ("aaaaaaaaiiiiiiiie!(%s)", $this_dir));
+}
+
+$options_path = sprintf ("%s/include/options.h", $root_path);
+open (FILE, $options_path);
+$options_contents = <FILE>;
+close (FILE);
+&load_options ($options_contents);
+
+$reconfig_path = sprintf ("%s/include/reconfig.h", $root_path);
+open (FILE, $reconfig_path);
+$reconfig_contents = <FILE>;
+close (FILE);
+&load_options ($reconfig_contents);
+
+$options_path = sprintf ("%s/include/test.h", $root_path);
+open (FILE, $options_path);
+$test_contents = <FILE>;
+close (FILE);
+&load_options ($test_contents);
+
+$linkgrp_path = sprintf ("%s/arch/mst_link.src", $root_path);
+open (FILE, $linkgrp_path);
+$link_contents = <FILE>;
+close (FILE);
+lc $link_contents;
+
+&strip ($link_contents, "uu", "ii");
+&process_source_code ($link_contents, "-/* */", "-// EOL", "-; EOL");
+&print_debug (2, "[%s]\n", $link_contents);
+
+@temp_files = ($link_contents =~ m|^\s*link/${this_module}/(\w+[!@]?\.c)|gmi);
+
+@temp_files = sort (@temp_files);
+
+$cntr = 0;
+$previous = "";
+foreach $thing (@temp_files) {
+	$thing = lc ($thing);
+	# print "file $thing\n";
+	if ($thing ne $previous) {
+		# discard duplicates (this shouldn't happen, but we need to tolerate it anyway)
+		# print "   used $thing $previous\n";
+		$previous = $thing;
+		push(@module_files, $thing);
+		$cntr++;
+	}
+	else {
+		# cut a warning and delay, so the warning might be visible
+		&print_debug (0, "\n\n\nWARNING - file '%s' is in link group twice.\n\n\n", $thing);
+		sleep(3);
+	}
+}
+
+foreach $file (@module_files) {
+	$this_path = sprintf ("%s/%s/%s", $root_path, $this_module, $file);
+	&print_debug (0, "[%s]\n", $this_path);
+	open (FILE, $this_path);
+	$contents = <FILE>;
+	$contents =~ s/LOCAL_STATE_BEGIN/LOCAL STATE_BEGIN/g;
+	close (FILE);
+
+	&clear_options ();
+	&load_options ($options_contents);
+	&load_options ($reconfig_contents);
+	&load_options ($test_contents);
+	&strip ($contents, "ii");
+	&load_options ($contents);
+	&strip ($contents, "uu", "ii");
+
+	# Strip off everything following MKHEADER IGNORE
+	$contents =~ s/^.*MKHEADER IGNORE[\s\S]*\z/ /m;
+	&process_source_code ($contents, "-/* */", "-// EOL", "-q", "-qq");
+
+	# Strip curly braces
+	while ($contents =~ s/\{[^\{\}]*\}/ /g) {
+		&print_debug (1, "!");
+	}
+	if ($contents =~ m/{/ || $contents =~ m/}/) {
+		&print_debug (0, "Unbalanced {} in %s!\n", $file);
+		&print_debug (1, "{\n%s\n}", $contents);
+	}
+	# Remove any leftover C Preprocessor lines
+	$contents =~ s/^\s*#.*$/ /gm;
+
+	foreach $t ("state", "variable1", "variable2", "routine") {
+		$regex = $search_string {$t};
+		$type = $t;
+		$type =~ s/\d+$//; # remove trailing digits from type name
+		while ($contents =~ s/${regex}/ /) {
+			$scope = $1;
+			$val = $2;
+			$hdrtype = $xlate_hdr_type {$scope};
+			$val =~ s/^\s*//; $val =~ s/\s*$//;	# Remove whitespace at start and end of string
+			$val =~ s/\s+/ /g;					# All other whitespace collapsed to single space
+#printf("\npushing $this_module $file $hdrtype $scope $type = $val");
+			push (@{$data{$this_module}->{$file}->{$hdrtype}->{$scope}->{$type}}, $val);
+			&print_debug (1, "[%s: %s]\n", $type, $val);
+			if ($type eq "state" && $scope eq "ENTRY") {
+				print_debug (1, "Warning: Use GLOBAL instead of ENTRY on state %s in file %s\n", $val, $this_path);
+			}
+		}
+	}
+}
+
+$mod_hfile = sprintf ("%s.h", $this_module);
+$local_hfile = sprintf ("%s.h", "local");
+
+$mod_hfile = lc ($mod_hfile);
+$local_hfile = lc ($local_hfile);
+
+foreach $cfile (@module_files) {
+	$hfile = $cfile;
+	$hfile =~ s/\.c$/.h/;
+	next unless -f $hfile;
+	next if $hfile eq $mod_hfile;
+
+	&process_hfile ($this_module, $hfile, "modulefile", $cfile);
+}
+
+&process_hfile ($this_module, $local_hfile,	"localfile",	@module_files);
+&process_hfile ($this_module, $mod_hfile,	"modulefile",	@module_files);
+
+## ######################################################################### ##
+#       process_hfile
+## ######################################################################### ##
+
+sub process_hfile
+{
+	# Global Constants used:
+	#	$current_date, $current_time, $root_path, $comment_line
+	#	%header_string, %format_string
+	# Global Variables modified:
+	#	%data
+
+	my ($module, $hfile, $filetype,  @cfiles) = @_;
+	my ($cfile, $new_mkheader, $type, $val, $test1, $test2);
+
+	# Determine if .h file is not to be touched
+	open (FILE, sprintf ("%s/%s/%s", $root_path, $module, $hfile));
+	$hfile_contents = <FILE>;
+	close (FILE);
+#	if ($hfile_contents =~ m|\n/\* MKHEADER Ignore \*/|) {
+	if (!($hfile_contents =~ m|\n/\*\- MKHEADER Begin \-\*/|)) {
+		return;
+	}
+
+	#start of file info
+#	$new_mkheader = sprintf ("/*- MKHEADER Begin -*/ /*- Date: %s Time: %s -*/\n", $current_date, $current_time);
+	$new_mkheader = sprintf ("/*- MKHEADER Begin -*/\n");
+	if ($cplus_mode) {
+		$new_mkheader .= "extern \"C\" {\n";
+	}
+
+#loop thru local and global types
+	foreach $scope (@{$scope_types{$filetype}}) {
+#loop thru varibles states and routines
+		foreach $type ("variable", "state", "routine"){
+			$temp_mkheader  = "\n";
+			$temp_mkheader .= $header_string {$scope};
+			$temp_mkheader .= $header_string {$type};
+			$temp_mkheader .= "\n";
+			$cfile_count = 0;
+#loop thru c files
+			foreach $cfile (@cfiles) {
+
+				next unless exists $data{$module}->{$cfile}->{$filetype}->{$scope}->{$type};
+				if(++$cfile_count == 1) {
+					$new_mkheader .= $temp_mkheader;
+				}
+
+				$new_mkheader .= sprintf ("/* %s */\n", $cfile);
+
+				if($scope eq "LOCAL") {
+					$cfile =~ /(.*)\.c/;
+					$local_filebase = $1;
+					$local_filebase =~ tr/@!/ab/;
+					$lc_module = lc ($module);
+					$lc_local_filebase = lc ($local_filebase);
+					if ($ifdefmode == 0){
+						$new_mkheader .= "\n#ifdef $lc_module"."_"."$lc_local_filebase"."_c\n";
+					}
+				}
+# loop thru entries
+				foreach $val (@{$data{$module}->{$cfile}->{$filetype}->{$scope}->{$type}}) {
+#					printf("\nval = $val -> $module $cfile $filetype $scope $type");
+					$tempstr = sprintf ($format_string {$scope}->{$type}, $val);
+#					print "\n---$tempstr";
+					$new_mkheader .= $tempstr;
+				}
+				if($scope eq "LOCAL") {
+					$cfile =~ /(.*)\.c/;
+					$local_filebase = $1;
+					if ($ifdefmode == 0){
+						$new_mkheader .= "#endif /* $module"."_"."$local_filebase"."_c */\n";
+					}
+				}
+
+				# Remove the key to avoid repeats in module.h
+				delete ($data{$module}->{$cfile}->{$filetype}->{$scope}->{$type});
+				$new_mkheader .= "\n";
+			}
+		}
+
+	}
+	#end of file info
+
+	if ($cplus_mode) {
+		$new_mkheader .= "}\n";
+	}
+	$new_mkheader .= "\n/*- MKHEADER End -*/\n";
+
+	#create file
+#	open (FILE, sprintf ("%s/%s/%s", $root_path, $module, $hfile));
+#	$hfile_contents = <FILE>;
+#	close (FILE);
+
+# the addition of the \C? allows mkheader to handle ^M from dos style files
+#	if    ($hfile_contents =~ s|\n(/\*\- MKHEADER Begin \-\*/[\s\S]*/\*\- MKHEADER End \-\*/\n)|\n$new_mkheader|) {
+	if    ($hfile_contents =~ s|\n(/\*\- MKHEADER Begin \-\*/[\s\S]*/\*\- MKHEADER End \-\*/\C?\n)|\n$new_mkheader|) {
+		# Check if different in timestamps only
+		$test1 = $1;
+		$test2 = $new_mkheader;
+		$test1 =~ s{Date: ../../.... Time: ..:..:..}{};
+		$test2 =~ s{Date: ../../.... Time: ..:..:..}{};
+		if ($test1 eq $test2) {
+			&print_debug (1, "[Unchanged:%s]", $hfile);
+			return;
+		}
+		&print_debug (1, "[Changed:%s]", $hfile);	# Replacing new style mkheader
+	}
+	elsif ($hfile_contents =~ s|\n/\* Routines: \*/[\s\S]*(#endif /\* _\w+_H \*/\s*)|\n$new_mkheader\n$comment_line\n\n$1|) {
+		&print_debug (1, "[2%s]", $hfile);	# Replacing old style mkheader
+	}
+	else {
+		&print_debug (0, "\n[mkheader warning: Could not parse %s/%s]\n", $module, $hfile);
+	}
+
+	open (FILE, sprintf (">%s/%s/%s", $root_path, $module, $hfile));
+	print FILE $hfile_contents;
+	close (FILE);
+}

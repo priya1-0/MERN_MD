@@ -1,0 +1,130 @@
+	// Runtime control of print macros
+//#if defined (DO_DIAG_PRINT_RUNTIME_LEVEL) || defined (DO_LG_VOIP_BOOT)
+	// There are multiple problems with these variables, but the advantages of
+	// having them undefined for various configurations appear to be greatly
+	// outweighed by the problems introduced when changing configurations and
+	// options.  For now, lets just define these always, eat the 10 bytes of
+	// space, and be done with it.
+	SHARED_D   ( uint16              ,parm__net_debug_level_ata)  //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_sip)  //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_mgcp) //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_net)  //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_omc)  //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_pmp)  //var_used
+	SHARED_D   ( uint16              ,parm__net_debug_level_ooma)
+	SHARED_D   ( uint16              ,parm__net_debug_level_video)
+	SHARED_D   ( uint16              ,parm__net_debug_level_vppn)
+	SHARED_D   ( uint16              ,parm__net_debug_dsp_enable)
+//#endif /* DO_DIAG_PRINT_RUNTIME_LEVEL || DO_LG_VOIP_BOOT */
+
+	// Shared Global Data
+	SHARED_D   ( uint16              ,parm__pump_conference_mode)
+	SHARED_D   ( uint16              ,saved__pump_conference_mode)
+
+	SHARED_D   ( uint16              ,codec_tx_mask)
+	SHARED_D   ( uint16              ,sport0_shift_count)
+	SHARED_D   ( uint16              ,clock_rx)
+
+	SHARED_D   ( uint16              ,debug_host_buffer,[MAX_HOST_BUFFER_CHARS/2 + 1])
+	SHARED_D   ( uint16              ,debug_host_buffer_throttle)
+	SHARED_D   ( int                 ,debug_host_buffer_chars)
+	SHARED_D   ( int                 ,debug_host_buffer_state)
+
+// Per Instance Global Data
+VAR_D      ( uint32              ,stat__rtp_counter)
+	VAR_D      ( uint16              ,stat__daa_hook_state)
+	VAR_D      ( uint16              ,stat__daa_gain_state)
+	VAR_D      ( uint16              ,stat__daa_ring_state)
+	VAR_D      ( uint16              ,stat__daa_debounce_state)
+	VAR_D      ( sint15              ,stat__daa_debounce_count)
+	VAR_D      ( sint15              ,stat__daa_disconnect_count)
+	VAR_D      ( sint15              ,stat__daa_disconnect_state)
+
+	// Sample Buffer Specifics
+	SHARED_D   ( sint15              ,sample_buffer, [SAMPLE_BUFFER_SIZE])
+	SHARED_D   ( uint16              ,sample_buffer_size)
+	SHARED_D   ( uint16              ,sample_overflow_count)
+	SHARED_D   ( int	             ,sample_foreground_offset)
+	SHARED_D   ( int                 ,sample_interrupt_offset)
+	SHARED_D   ( int                 ,sample_interrupt_tx_offset)
+
+	SHARED_D   ( int                 ,interrupt_sample_count)
+	SHARED_D   ( uint16              ,interrupt_running_fg)
+
+	// Fg cpu usage stats
+	SHARED_D   ( uint16              ,interrupt_cpu_pcount)
+	SHARED_D   ( uint16              ,interrupt_cpu_icount)
+
+	// Sample Mailbox
+	SHARED_D   ( uint16              ,sample_cnt)
+	SHARED_D   ( uint16              ,sample_cnt_high)
+
+	SHARED_D      ( uint16              ,system_clock_remainder)
+	SHARED_D      ( sint31              ,system_clock_previous)
+
+	SHARED_D      ( uint16              ,record_sample_mode)
+
+	SHARED_D      ( volatile int		,tx_data_ti)
+	SHARED_D      ( volatile int		,rx_data_ti)
+
+	SHARED_D      ( volatile int		,codec_int_state)
+	SHARED_D      ( volatile uint16     ,codec_control_word)
+
+
+	// this is totally the wrong file for this, but I don't know
+	// where else to put it atm.  We need a high speed exchange
+	// buffer for hsflag, but we only need one per system.
+	SHARED_D   ( sint15              ,hsflag_sint15_exchange_buffer, [4])
+	SHARED_D   ( fract               ,hsflag_fract_exchange_buffer, [4])
+
+// ------------------------------------------------------
+// data for the single channel line impedance monitor
+// See libtel/linedet!.c for FAST/SLOW memory speed notes, though really
+// almost all of this is filters, so 90% of it needs to be high speed
+// ------------------------------------------------------
+
+// rx/tx lpf, downconvert, and delay line
+	SHARED_D   ( fract               ,impedance_monitor_tx_in, [IMPEDANCE_MONITOR_DECIMATE_DATA_SIZE * 2])
+	SHARED_D   ( int                 ,impedance_monitor_tx_in_offset)
+	SHARED_D   ( fract               ,impedance_monitor_rx_in, [IMPEDANCE_MONITOR_DECIMATE_DATA_SIZE * 2])
+	SHARED_D   ( int                 ,impedance_monitor_rx_in_offset)
+	SHARED_D   ( int                 ,impedance_monitor_decimation_counter)
+	SHARED_D   ( int                 ,impedance_monitor_decimate)
+	SHARED_D   ( int                 ,impedance_monitor_decimated_sample_count)
+	SHARED_D   ( fract               ,impedance_monitor_decimated_rx, [IMPEDANCE_MONITOR_INTERNAL_SIZE])
+	SHARED_D   ( fract               ,impedance_monitor_decimated_tx, [IMPEDANCE_MONITOR_INTERNAL_SIZE])
+	SHARED_D   ( int                 ,impedance_monitor_future_rx_offset)
+	SHARED_D   ( int                 ,impedance_monitor_future_tx_offset)
+	SHARED_D   ( fract               ,impedance_monitor_future_rx, [IMPEDANCE_MONITOR_FUTURE_RX_SIZE])
+	SHARED_D   ( fract               ,impedance_monitor_future_tx, [IMPEDANCE_MONITOR_FUTURE_TX_SIZE])
+
+// adaptive filter and coefficient update
+	SHARED_D   ( fract               ,impedance_monitor_saved_coefs, [IMPEDANCE_MONITOR_COEF_SIZE])
+	SHARED_D   ( fract               ,impedance_monitor_coefs, [IMPEDANCE_MONITOR_COEF_SIZE])
+	SHARED_D   ( fract               ,impedance_monitor_tx_data, [IMPEDANCE_MONITOR_COEF_SIZE * 2])
+	SHARED_D   ( fract32             ,impedance_monitor_tx_power32)
+	SHARED_D   ( int                 ,impedance_monitor_filter_offset)
+
+// tx vad
+	SHARED_D   ( fract32             ,impedance_monitor_tx_noise_floor_sum32)
+	SHARED_D   ( int                 ,impedance_monitor_tx_noise_floor_sum_counter)
+	SHARED_D   ( int                 ,impedance_monitor_tx_noise_floor_index)
+	SHARED_D   ( fract               ,impedance_monitor_tx_noise_floor_last)
+	SHARED_D   ( fract               ,impedance_monitor_tx_noise_floors, [LIM_NOISE_FLOOR_COUNT])
+	SHARED_D   ( fract32             ,impedance_monitor_tx_speech_pow32)
+
+// rx vad and doubletalk detector
+	SHARED_D   ( int                 ,impedance_monitor_rx_speech_detected)
+	SHARED_D   ( int                 ,impedance_monitor_rx_speech_overhang)
+
+// convergence check
+	SHARED_D   ( int                 ,impedance_monitor_detect_holdoff_counter)
+	SHARED_D   ( int                 ,impedance_monitor_last_fail_state)
+	SHARED_D   ( sint31              ,impedance_monitor_max_tap_lpf1)
+	SHARED_D   ( sint31              ,impedance_monitor_max_tap_lpf2)
+	SHARED_D   ( sint31              ,impedance_monitor_max_slow_lpf1)
+	SHARED_D   ( sint31              ,impedance_monitor_max_slow_lpf2)
+
+// ------------------------------------------------------
+// end of data for the single channel line impedance monitor
+// ------------------------------------------------------

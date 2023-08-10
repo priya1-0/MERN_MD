@@ -1,0 +1,21 @@
+
+#undef $/;
+
+if ($ARGV[0]) {
+	$file = shift;
+#	print $file;
+	open (FILE, $file) || die "could not open file $file";
+
+	while ($line = <FILE>) {
+		if ($line =~ m/^\s*$/) {
+		} else {
+			$newcontents .= $line;
+		}
+	}
+	close (FILE);
+#	print "\nProcessing file $file";
+	open (FILE, ">$file") || die "could not open file $file";
+	print FILE $newcontents;
+	close (FILE);
+
+}

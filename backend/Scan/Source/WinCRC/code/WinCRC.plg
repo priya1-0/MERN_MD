@@ -1,0 +1,48 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: WinCRC - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\JOE~1.BRO\LOCALS~1\Temp\RSP6E6.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/WinCRC.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"H:\bin\sources\WinCRC\CRCTemplate.cpp"
+"H:\bin\sources\WinCRC\HelpDialog.cpp"
+"H:\bin\sources\WinCRC\InputTranslation.cpp"
+"H:\bin\sources\WinCRC\WinCRC.cpp"
+"H:\bin\sources\WinCRC\WinCRCDlg.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\JOE~1.BRO\LOCALS~1\Temp\RSP6E6.tmp" 
+Creating temporary file "C:\DOCUME~1\JOE~1.BRO\LOCALS~1\Temp\RSP6E7.tmp" with contents
+[
+/nologo /subsystem:windows /incremental:no /pdb:"Release/WinCRC.pdb" /machine:I386 /out:"Release/WinCRC.exe" 
+.\Release\calcCRC.obj
+.\Release\CRCTemplate.obj
+.\Release\HelpDialog.obj
+.\Release\InputTranslation.obj
+.\Release\StdAfx.obj
+.\Release\WinCRC.obj
+.\Release\WinCRCDlg.obj
+.\Release\WinCRC.res
+]
+Creating command line "link.exe @C:\DOCUME~1\JOE~1.BRO\LOCALS~1\Temp\RSP6E7.tmp"
+<h3>Output Window</h3>
+Compiling...
+CRCTemplate.cpp
+HelpDialog.cpp
+InputTranslation.cpp
+WinCRC.cpp
+WinCRCDlg.cpp
+Generating Code...
+Linking...
+
+
+
+<h3>Results</h3>
+WinCRC.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

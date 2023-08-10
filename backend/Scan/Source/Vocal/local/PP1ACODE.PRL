@@ -1,0 +1,292 @@
+
+## ######################################################################### ##
+ #       Usage display routine
+## ######################################################################### ##
+
+sub usage {
+	my ($retval) = @_;
+	print STDERR "\npp1acode\t\t10-01-03\n\n";
+	print STDERR "Comments #Acode/#Ccode directives before preprocessor.\n";
+	print STDERR "Usage:\tpp1acode [-w] [-d] src dst\n\n";
+	print STDERR "\t-w\tprocess #warnings.\n";
+	print STDERR "\t-d#\tdebug message level.\n";
+#	print STDERR "\t-d[#]\tdebug message level.\n";
+	print STDERR "\t-n#\tdon't do weak processing.\n";
+	print STDERR "\t-m#\tdon't do mchan processing.\n";
+	print STDERR "\t-q\tdon't munge quotes in #Acode/#Ccode.\n";
+
+	print STDERR "\n";
+	exit $retval;
+}
+
+## ######################################################################### ##
+ #       Read command line arguments
+## ######################################################################### ##
+
+if ($#ARGV == 0) {
+	print STDERR "\n";
+	print STDERR "Error in pp1acode.prl - this script requires a minimum of two arguments.\n";
+	print STDERR "If you are seeing this from a normal build, you might need to 'make depend'.\n";
+	print STDERR "\n";
+	exit 1;
+}
+
+if ($#ARGV <1) {
+	print "$#ARGV\n";
+	&usage (1);
+}
+
+# Process options
+$debug = 0;
+$warnings = 0;
+$munge_quotes = 1;
+$noweak = 0;
+$mchan = 1;
+
+while ($ARGV[0] =~ m/^-(\S+)/) {
+	$arg = shift;
+	if (0) {}
+
+#	elsif ($arg =~ m/^-d$/i) { $debug = 1; }
+
+#	elsif ($arg =~ m/^-d(\d*)$/i) {
+#		$val = shift;
+#		if    ($val == 1) { $debug = 1; }
+#		elsif ($val == 2) { $debug = 2; }
+#		else              { &usage (1); }
+#	}
+
+	elsif ($arg =~ m/^-m/i) {
+		$mchan = 0;
+	}
+	elsif ($arg =~ m/^-d(\d*)$/i) {
+		$debug = ($1) ? $1 : 1;
+	}
+	elsif ($arg =~ m/^-n$/i) {
+		$noweak = 1;
+	}
+	elsif ($arg =~ m/^-q$/i) {
+		$munge_quotes = 0;
+	}
+	elsif ($arg =~ m/^-w/i) {
+		$warnings = 1;
+	}
+
+	else {
+		print STDERR "Unrecognized flag\n\n";
+		&usage (1);
+	}
+}
+
+	open (WEAKLIST, "../data/weak.cat") || print "pp1acode.prl: FAILED opening weak.cat";
+	while (<WEAKLIST>) {
+		next unless m/([a-zA-Z_0-9]+):([12])/;
+		$found_var{$1} = $2;
+	}
+	close(WEAKLIST);
+
+
+# can be of the form file1|file2|file3
+
+if ($noweak == 1) {
+	$WEB_WEAK_FILES = qr"~~~~~"; # match no file
+	$SNMP_WEAK_FILES = qr"~~~~~"; # match no file
+} else {
+	$WEB_WEAK_FILES = qr"atapages";
+	$SNMP_WEAK_FILES = qr"voctable|mibtable";
+#	print "PROCESSING WEAK FILE\n";
+}
+
+$LINE_RE = qr"^[ \t]+[A-Z]\s+\(.*$";
+$QUOTED_STRING = qr"\"[^\"]+\"";
+$PARAMETER = qr"[&a-zA-Z0-9_\[\]]+";
+$OFFSET_EXPR = qr"offsetof[ \t]*\(([^\)]*) *, *([^\)]*)\)";
+$TYPE = qr"[A-Z_]+";
+
+
+## ######################################################################### ##
+ #       Process source file
+## ######################################################################### ##
+
+# When we are in strong warning mode (-w switch used), this match allows the
+# stage 1 preprocessor to generate warning labels for stage 2, even though the
+# #warning might be commented out.  This is desirable because some compilers
+# don't allow the use of #warning directives, and as a result useful warnings
+# end up commented out in the CVS master source.  The stage 2 preprocessor
+# never halts on warnings.
+# This matches "#warning", "//#warning", and "// #warning"
+$warning = "^.?.?.?#warning";
+
+$Acode = "^#Acode";
+$Ccode = "^#Ccode";
+$acodemode = 0;
+
+	$src = shift;
+	open (FILE, $src) || die "could not open file $src for writing";
+	$buffer = "";
+	while ($line=<FILE>) {
+		$line =~ s/L0:/Label0:/;
+		if ($line =~ m/$Acode/) {
+			$buffer .= "Acode".$';
+			$acodemode = 1;
+		}
+		elsif ($line =~ m/$Ccode/) {
+			$buffer .= "Ccode".$';
+			$acodemode = 0;
+		}
+		elsif ($line =~ m"^\s*WEAK\s*\(\s*([^,]+?)\s*,\s*(.+)\)") {
+			$var = $1;
+			$val = $2;
+			$rest = $';
+			$prev = $`;
+			$rest =~ s/\n//;
+			if($found_var{$var} eq "2")
+			{
+				$buffer .= "\t$prev$var = $val$rest\n";
+			}
+			elsif ($found_var{$var} eq "1")
+			{
+				$buffer .= "\n";
+			}
+			else
+			{
+				$buffer .= "\#error $var is not a valid variable for WEAK\n";
+			}
+		}
+		# This should only be used on structures that are declared in our auto data system
+		elsif ($line =~ m"^\s*WEAK_STRUCTURE_CLEAR\s*\(\s*([^,]+?)\s*\)") {
+			$var = $1;
+			$varUC = uc($var);
+			$varLC = lc($var);
+			$buffer .= "#if defined $varLC\_used\n";
+			$buffer .= "	generic_block_clear ((void *) &$var, sizeof($var));\n";
+			$buffer .= "#else\n";
+			$buffer .= "#if defined $varUC\n";
+			$buffer .= "	generic_block_clear ((void *) &$varUC, sizeof($varUC));\n";
+			$buffer .= "#endif /* $varUC */\n";
+			$buffer .= "#endif /* $var */\n";
+		}
+		# This should only be used on buffers within structures that are declared in our auto data system
+		elsif ($line =~ m"^\s*WEAK_BUFFER_CLEAR\s*\(\s*([^,]+?)\s*\)") {
+			$var = $1;
+			if($found_var{$var} eq "2") {
+				$buffer .= "	generic_block_clear ((void *) &$1, sizeof($1));\n";
+			}
+			elsif ($found_var{$var} eq "1")	{
+				$buffer .= "\n";
+			}
+			else {
+				$buffer .= "\#error $var is not a valid variable for WEAK_BUFFER_CLEAR\n";
+			}
+		}
+		elsif ($line =~ m/$warning/) {
+			if ($warnings == 1) {
+				if ($acodemode == 1) {
+					print STDERR "Warning in pp1acode.prl - found #warning directive in ACode\n";
+					print STDERR "section. This will likely cause compile failure.\n";
+				}
+				$buffer .= "vocal_warning".$';
+			} else {
+				$buffer .= $line;
+			}
+		}
+		elsif ($acodemode == 1) {
+			if ($munge_quotes == 1) {
+				$line =~ s/\"/\\"/g;
+			}
+			$buffer .= $line;
+		}
+		elsif (($src=~/$WEB_WEAK_FILES/) && ($line =~ m/$LINE_RE/)) {
+			if ($line =~ m/^[ \t]+[A-Z]\s+\(\s*$QUOTED_STRING\s*,\s*($PARAMETER)\s*,\s*($TYPE)/) {
+				$var = $1;
+				$type = $2;
+				# ditch ampersand
+				$var =~ s/&//;
+				# ditch any array notation
+				if ($var =~ m/(.*?)\[/) {
+					$var = $1;
+				}
+
+				if ($found_var{$var} eq "2") {
+#					print "+";
+#					print "$var\n";
+
+					if ($mchan == 1) {
+					# We will mark all variables as multichan, and then remove the marker from lines that
+					# do not deserve it
+					# this marker is cleaned up by the post processing perl script (pp2ti_m.prl etc)
+						$line =~ s/$type/W_MCHAN_MARK|$type/;
+					}
+					$buffer .= $line;
+				}
+				elsif ($found_var{$var} eq "1") {
+#					print "-";
+					$buffer .= "\n";
+				}
+				else {
+					$buffer .= $line;
+					print "WARNING $var is not a valid automatic variable (atapages) -> $line";
+#					$buffer .= "\#error $var is not a valid variable for atapages\n";
+				}
+
+			} else {
+#					print "---- $line";
+					$buffer .= $line;
+			}
+		}
+		elsif (($src=~/$SNMP_WEAK_FILES/) && ($line =~ m/SNMP_ITEM/)) {
+			# the start of the following regular expression says, if there are any characters, they must not be a /
+			if ($line =~ m/(?:[^\/]+|^)SNMP_ITEM.*?}\s*,\s*($OFFSET_EXPR|$PARAMETER)/ ) {
+#				$varfull = $1;
+				$var = $1;
+				$var =~ s/&//;
+
+				$str = $2;
+				$mem = $3;
+				$str =~ s/struct\s+//;
+
+				if ($var =~ m/offsetof/) {		# offset structure type var
+#					at this point $var only contains offsetof, need to grab more
+#					print "OFFSET var [$var $str $mem]\n";
+					if ($line =~ s/$OFFSET_EXPR/\&WI__$str\__$mem/) {
+#						print "matched var[$var] in [$line]\n";
+					}
+
+					$line =~ s/SNMP_ITEM\s*\(/{/;
+					$line =~ s/(.*)\)(.*)/$1}$2/;
+
+
+					$buffer .= $line;
+				}
+				elsif ($found_var{$var} eq "2") {		# data dir var in use
+
+					$line =~ s/$var/WI__$var/;
+
+					$line =~ s/SNMP_ITEM\s*\(/{/;
+					$line =~ s/(.*)\)(.*)/$1}$2/;
+
+					$buffer .= $line;
+				}
+				elsif ($found_var{$var} eq "1") {		# data dir var NOT in use
+					$buffer .= "\n";
+				}
+				else {
+					$buffer .= $line;
+					print "WARNING $var is not a valid automatic variable (snmp) -> $line";
+#					$buffer .= "\#error $var is not a valid variable for atapages\n";
+				}
+
+			} else {
+#					print "---- $line";
+					$buffer .= $line;
+			}
+		}
+		else {
+			$buffer .= $line;
+		}
+	}
+
+	$dst = shift;
+	open (FILE, ">$dst") || die "could not open file $dst for writing";
+	print FILE $buffer;
+	close (FILE);

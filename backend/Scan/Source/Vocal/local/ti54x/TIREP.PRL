@@ -1,0 +1,119 @@
+
+# ########################################################################### #
+
+sub numerically {$a <=> $b}
+
+sub find_segment
+{
+	local ($page, $sect) = (@_);
+	my ($start, $end, $size);
+
+	if ($page == 0) {
+		foreach $seg (keys %seg_pm) {
+			$start = $end = $seg;
+			$size  = $seg_pm{$seg}{size};
+			$end   = $start + $size - 1	if $size != 0;
+
+			if (($sect >= $start) && ($sect <= $end)) {
+				return $seg_pm{$seg}{name};
+			}
+		}
+	}
+	else {
+		foreach $seg (keys %seg_dm) {
+			$start = $end = $seg;
+			$size  = $seg_dm{$seg}{size};
+			$end   = $start + $size - 1	if $size != 0;
+
+			if (($sect >= $start) && ($sect <= $end)) {
+				return $seg_dm{$seg}{name};
+			}
+		}
+	}
+
+	return "UNREF";
+}
+
+# ########################################################################### #
+
+	$map_file = "timdm.map";
+
+	undef $/;
+
+	open (MAP_FILE, $map_file) or die "Unable to open map file";
+	$file = <MAP_FILE>;
+	close (MAP_FILE);
+
+	$page = 2;
+	$count = 0;
+	foreach $line (@fd = split /\n/, $file) {
+		if ($line =~ m/^\.(\S+)\s+(\d)\s+([A-Za-z0-9]{8})\s+([A-Za-z0-9]{8})/g) {
+			$w = $1; $x = $2; $y = $3; $z = $4;
+			$section[$x]{$count} = {name => $w, size => hex($z), start=> hex($y)};
+			$count++;
+
+			next;
+		}
+
+		elsif($line =~ m/^\.(\S*)/){
+			$name = $1;
+			next;
+		}
+
+		elsif($line =~ m/^\*\s*(\d)\s*([A-Za-z0-9]{8})\s*([A-Za-z0-9]{8})/g) {
+			$w = $1; $x = $2; $y = $3;
+			$section[$w]{$count} = {name => $name, size => hex($y), start=> hex($x)};
+			$count++;
+#			$section[$1]{hex($2)} = {name => $name, size => hex($3), start=> hex($2)};
+			next;
+		}
+
+		if ($line =~ m/^(PAGE\s+(\d)\:\s+|\s+)(\w+)\s+([A-Za-z0-9]{8})\s+([A-Za-z0-9]{8})\s+([A-Za-z0-9]{8})/g) {
+			$page = $2	if length($2) != 0;
+			$segment[$page]{hex($4)} = {name => $3, size => hex($5)};
+		}
+	}
+
+	%sec_pm = %{$section[0]};
+	%sec_dm = %{$section[1]};
+
+	%seg_pm = %{$segment[0]};
+	%seg_dm = %{$segment[1]};
+
+	open (FILE, ">timdm.txt") or die "Unable to open report file\n";
+
+	print	   "Program memory page\n";
+	print FILE "Program memory page\n";
+
+	foreach $sec (sort numerically keys %sec_pm) {
+#		$sec_start = $sec_end = $sec;
+		$sec_start  = $sec_end = $sec_pm{$sec}{start};
+		$sec_size  = $sec_pm{$sec}{size};
+		$sec_name  = $sec_pm{$sec}{name};
+		$sec_end   = $sec_start + $sec_size - 1	if $sec_size != 0;
+#		$seg_name  = find_segment (0, $sec);
+		$seg_name  = find_segment (0, $sec_pm{$sec}{start});
+
+		printf	    ("0x%06x - 0x%06x  Size (%5d) Sec (%-17s: %-16s)\n", $sec_start, $sec_end, $sec_size, $sec_name, $seg_name);
+		printf FILE ("0x%06x - 0x%06x  Size (%5d) Sec (%-17s: %-16s)\n", $sec_start, $sec_end, $sec_size, $sec_name, $seg_name);
+	}
+
+	print      "\nData memory page\n";
+	print FILE "\nData memory page\n";
+
+	foreach $sec (sort keys %sec_dm) {
+#		$sec_start = $sec_end = $sec;
+		$sec_start  = $sec_end = $sec_dm{$sec}{start};
+		$sec_size  = $sec_dm{$sec}{size};
+		$sec_name  = $sec_dm{$sec}{name};
+		$sec_end   = $sec_start + $sec_size - 1	if $sec_size != 0;
+#		$seg_name  = find_segment (1, $sec);
+		$seg_name  = find_segment (1, $sec_dm{$sec}{start});
+
+		printf      ("0x%06x - 0x%06x  Size (%5d) Sec (%-17s: %-16s)\n", $sec_start, $sec_end, $sec_size, $sec_name, $seg_name);
+		printf FILE ("0x%06x - 0x%06x  Size (%5d) Sec (%-17s: %-16s)\n", $sec_start, $sec_end, $sec_size, $sec_name, $seg_name);
+	}
+
+	close (FILE);
+
+# ########################################################################### #

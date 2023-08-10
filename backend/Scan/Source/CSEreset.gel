@@ -1,0 +1,20 @@
+
+
+menuitem "2490_Reset";
+hotmenu Reset_Run()
+{
+//GEL_BreakPtDel(0x527b);
+//GEL_BreakPtDel(0x52aa);
+GEL_Reset();
+GEL_Restart();
+//GEL_TextOut("Wait for restart to complete\n");
+//GEL_TextOut("Wait for restart to complete\n");
+//GEL_TextOut("Wait for restart to complete\n");
+//GEL_TextOut("Wait for restart to complete\n");
+
+GEL_Run();
+//GEL_TextOut("Set break point\n");
+//GEL_BreakPtAdd(0x527b);
+//GEL_BreakPtAdd(0x52aa);
+//GEL_Run();
+}

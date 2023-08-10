@@ -1,0 +1,223 @@
+#!/usr/bin/perl
+#	This script traverses through a host build, and searches for all symbols that
+#	are being used by the code. It takes these symbols and builds
+#	symauto.h which is then included in symlist.h when the option
+#	DO_AUTO_SYMLIST is on. It is normally called by 'gmake symbols' in the
+#	main source tree makefile.  It uses the djgpp preprocessor (cpp0) for some of
+#	it's work.  It requires cpp0.exe to be in the local directory.
+#	 It can be changed to use the microsoft CL preprocessor by
+#	 changing the cpp0 call below to the cl call.
+
+
+BEGIN {
+	push (@INC, "local", "../local", "w:/utility/tools", "c:/apps/bin");
+#	push (@INC, "local", "../local");
+	require vocal; import vocal;
+	require vocalmdm; import vocalmdm;
+	*{"main::getcwd"} = \&{"Dos::GetCwd"}; # for djgpp version, use below otherwise
+#	require Cwd; import Cwd;
+}
+
+sub usage
+{
+	my ($retval) = @_;
+	print "Usage: makesyml <sourcedir> > outfile\n";
+	exit ($retval);
+}
+
+
+## ######################################################################### ##
+#       Main routine
+## ######################################################################### ##
+
+undef $/;
+&set_print_debug_level(0);
+
+## ######################################################################### ##
+#       Determine OS and runtime environment
+## ######################################################################### ##
+
+# dredge out the OS type for later use
+# win9x based OS returns "" , nt based returns "Windows_NT", linux returns linux-gnu
+# if this isnt working on your linux system you might have to export OSTYPE
+$os_name = $ENV{OS};
+$os_type = $ENV{OSTYPE};
+
+# check for linux first, set os_name if needed
+if($os_name eq "linux-gnu") {
+	$os_name = "linux";
+}
+if($os_type eq "linux-gnu") {
+	$os_name = "linux";
+}
+if($os_type eq "linux") {
+	$os_name = "linux";
+}
+
+# check for old windows 98
+if($os_name eq "") {
+	$os_name = $os_type;
+}
+if($os_name eq "") {
+	$os_name = "Windows_98";
+}
+
+# now make the decision between win98, nt/xp, and linux
+if($os_name eq "Windows_98"){
+	# windows 98
+	$cpp = "local/CPP0";
+	$redir = "";
+}
+elsif($os_name eq "Windows_NT") {
+	$cpp = "CPP0";
+	$redir = "2>nul";
+}
+else {
+	# linux/unix variants
+	$cpp = "cpp";
+	$redir = "2>/dev/null";
+}
+
+$option__strip_files = 1;			# strip file by default
+$option__linkgrp_file = "arch/mst_link.src";		# use (source)/arch/link_grp.src by default
+
+while ($ARGV[0] =~ m/^([\+\-])(\S+)/) {
+	$arg = shift;
+	$indicator = $1;
+	$option = lc ($2);
+	if ($option eq "h") {
+		&usage (0);
+	}
+}
+&usage (1) unless (@ARGV == 1);
+$source = shift;
+
+# read in options.h and load options into storage for strip util etc.
+
+&load_options_file ("include/options.h");
+&load_options_file ("include/reconfig.h");
+&load_options_file ("include/test.h");
+
+&set_options (
+			  "notdef",							"u",
+			  "PSEUDO_CODE",					"u",
+			  "PSEDUO_CODE",					"u",
+			  "C_CODE",							"u",
+			  "NOTDEF",							"u",
+			  "NOT_USED",						"u",
+			  "OLD_CODE",						"u",
+			  "DO_REMOVE",						"u",
+			  "DO_STRIP_DEFINED_FOR_RELEASE",	"d",
+			 );
+
+
+
+$source_linkgrp = "${option__linkgrp_file}";
+open (LINKGRP, $source_linkgrp) || die ("Cannot open link file: ${$source_linkgrp}\n");
+$linkgrp__contents = <LINKGRP>;
+close (LINKGRP);
+&strip ($linkgrp__contents);
+
+print "Building symauto.h ";
+
+undef %obj_dirs;
+while ($linkgrp__contents =~ m!^\s*link/(\w+)/([\w\@\!]+)!gm) {
+	$path = "${1}/${2}";
+	$dir = $1;
+	$base_filename = $2;
+	$obj_files {$path} = $dir;
+	$obj_dirs {$dir} .= "${base_filename},";
+}
+@obj_file_list = sort keys %obj_files;
+
+%source_dirs = %obj_dirs;
+
+# create list of c files
+if($os_name eq ""){			#turn off stderr in win9x
+	open(STDERR, ">nul");
+}
+
+foreach $dir (sort keys %source_dirs) {
+
+	undef %mk_c_files;
+	foreach $file (split (/,/, $source_dirs {$dir})) {
+		next if $file eq "";
+		$mk_c_files {$file} = 1;
+	}
+
+	$tempcnt = 0;
+	foreach $temp (sort keys %mk_c_files) {
+		$tempcnt++;
+		next if $temp eq "";
+
+#search for ASI__ files in stripped c files
+		if (open (MBD_FILE, "$dir/$temp.c")) {
+			print stderr ".";
+			$contents = <MBD_FILE>;
+			close (MBD_FILE);
+			&strip ($contents);
+			&rmcommnt ($contents);
+			foreach $line (split (/\n/, $contents)) {
+
+				if ($line =~ m/.*ASI__(\w+)/) {
+					$symbol_list{$1}  = 1;
+				}
+			}
+		}
+#search for SI__ files in preprocessed c files
+
+#		you must have the environment set dgjpp=.\local\gcc\djgpp.env to use CPP (instead of cpp0)
+#		$ENV{DJGPP} = '.\local\gcc\djgpp.env';#
+#		$output = `CL /EP /nologo /I. /I.. $dir/$temp.c `;
+##		if($os_name eq ""){			# if Windows9x
+##			$output = `local/CPP0 -w -I. -I.. $dir/$temp.c`;
+###			print stderr ".";
+###			print $output;
+##			print ".";
+##		} else {					# if Windows NT based
+##			$output = `CPP0 -I. -I.. $dir/$temp.c 2>temp`;
+##			print stderr ".";
+##		}
+		$output = `$cpp -I. -I.. -P $dir/$temp.c $redir`;
+
+		$found_symlist = 0;
+		foreach $line (split (/\n/, $output)) {
+#			print $line;
+			if ($line =~ m/.*ASI__(\w+)/) {
+				$symbol_list{$1}  = 1;
+			}
+			if ($line =~ m/SYMBOL__NUMBER_OF_SYMBOLS/){
+				$found_symlist = 1;
+			}
+			if($found_symlist)  {
+				if ($line =~ m/.*\bSI__(\w+)/) {
+					$symbol_list{$1}  = 1;
+				}
+			}
+		}
+	}
+}
+
+if($os_name eq ""){
+	close(STDERR);
+	open(STDERR, ">-");
+}
+
+#sort and output symlist
+open (SYML_TMP, ">makesym.tmp") || return print "\nfinddata.prl: FAILED opening temporary file\n";
+@symbol_list = keys %symbol_list;
+@sorted_symbol_list = sort @symbol_list;
+
+	print SYML_TMP "SYM_PROC_BEGIN\n";
+foreach $symbol (@sorted_symbol_list) {
+	print SYML_TMP "SYM_PROC ($symbol)\n";
+
+}
+
+print SYML_TMP "SYM_PROC_END\n";
+close (SYML_TMP);
+
+print "\nBuilt symauto.h.\n";
+if($os_name eq ""){
+	print "Close this window to continue...\n";
+}

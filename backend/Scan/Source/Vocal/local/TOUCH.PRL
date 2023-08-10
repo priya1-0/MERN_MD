@@ -1,0 +1,18 @@
+undef $/;
+
+foreach $arg (@ARGV) {
+	if (-f $arg) {
+		open (TOUCHFILE, $arg);
+		binmode TOUCHFILE;
+		$contents = <TOUCHFILE>;
+		close (TOUCHFILE);
+		open (TOUCHFILE, ">${arg}");
+		binmode TOUCHFILE;
+		print TOUCHFILE $contents;
+		close (TOUCHFILE);
+	}
+	else {
+		open (TOUCHFILE, ">${arg}");
+		close (TOUCHFILE);
+	}
+}

@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+
+BEGIN {
+	push (@INC, "local", "../local"); # where to find vocal.pm
+	require vocal; import vocal;
+	require vocalmdm; import vocalmdm;
+}
+
+sub usage
+{
+	my ($retval) = (@_);
+	print STDERR "Usage: makedep <link rsp file> <makefiles>\n";
+	exit ($retval);
+}
+
+undef $/;
+
+$linkrsp = shift;
+
+#open (LINKRSP, $linkrsp) || die "aiiiiiiiiiieeeeeeeeee!!";
+#$linkrsp__contents = <LINKRSP>;
+#close (LINKRSP);
+
+###
+open (FILE, "../arch/mst_link.src") || open (FILE, "arch/mst_link.src") ||die "Could not open arch/mst_link.src";
+$linkrsp__contents = <FILE>;
+close (FILE);
+
+
+
+$temp_file = $ARGV [0];
+$temp_file =~ s|\\|/|;
+$temp_file =~ m|(?:(.*)/)?([^/]+)/[^/]+$|;
+$root_dir = ($1 eq "") ? "." : $1;
+$include_dir = "${root_dir}/include/";
+
+&file_rd ("${include_dir}options.h", $options__contents);
+&file_rd ("${include_dir}reconfig.h", $reconfig__contents);
+&file_rd ("${include_dir}test.h", $test__contents);
+&load_options ($options__contents);
+&load_options ($reconfig__contents);
+&load_options ($test__contents);
+
+
+#&load_options_file ("../include/options.h");
+#&load_options_file ("../include/test.h");
+&set_options ("notdef",			"u",
+			  "NOTDEF",			"u",
+			  "NOT_USED",		"u");
+&strip ($linkrsp__contents, "ii", "uu");
+
+$linkrsp__contents =~ s!/\*.*?\*/!!g;
+$linkrsp__contents =~ s!\s*\n\s*!\n!g;
+###
+
+#$temp_file = $ARGV [0];
+#$temp_file =~ s|\\|/|;
+#$temp_file =~ m|(?:(.*)/)?([^/]+)/[^/]+$|;
+#$root_dir = ($1 eq "") ? "." : $1;
+
+
+@files = ($linkrsp__contents =~ m!^link/(\S+)/(\S+\.[cSs])$!gm);
+
+
+while (($dir, $file) = splice (@files, 0, 2)) {
+	$filelists {$dir} .= "${file},";
+	$dirs {$dir} = 1;
+#	print STDERR "($file, $dir)";
+}
+
+foreach $optfile ("include/options.h", "../include/options.h") {
+	if (-f $optfile) {
+		&load_options_file ($optfile, "ii");
+		break;
+	}
+}
+
+foreach $file (@ARGV) {
+	print "---Processing ${file}...\n";
+	if (open (FILE, "${file}")) {
+		$orig_contents = <FILE>;
+		close (FILE);
+
+		$file =~ s|\\|/|;
+		$file =~ m|(.*/)?([^/]+)/[^/]+$|;
+#		$root_dir = ($1 eq "") ? "." : $1;
+
+		$this_dir = $2;
+
+		$contents = $orig_contents;
+
+		$contents =~ s/\n#\s+#[#\s]+object\s+dependencies[\s\S]*$//i;
+
+		$contents .= "\n# " . "#" x 75 . " #\n#\n# Object dependencies (Automatically generated):\n#\n";
+
+		undef %this_filelist;
+		print "+++$this_dir\n";
+		foreach $temp (sort split (/,/, $filelists {$this_dir})) {
+			$this_filelist {$temp} = 1;
+			print "+++$temp\n";
+		}
+
+		@sorted_filelist = sort keys %this_filelist;
+		print join (@sorted_filelist, "|");
+		$filelist_size = @sorted_filelist;
+#		print STDERR "\nsize = $filelist_size\n";
+		if ($filelist_size > 0) {
+			foreach $temp (@sorted_filelist) {
+				next if $temp !~ m/\S/;
+				$temp =~ s/\.s$/\.S/;
+				$this_file = "${this_dir}/${temp}";
+
+				$wholefile = "${root_dir}/${this_file}";
+				print STDERR "$wholefile\n";
+				#next unless -f $wholefile;
+				unless (-f $wholefile) {
+					print STDERR "-------------------------------------------------------\n";
+					print STDERR "$wholefile DOES NOT EXIST\n";
+					print STDERR "-------------------------------------------------------\n";
+					next;
+				}
+
+				$tempstp = $temp;
+				# .S files get a different suffix
+				if ($temp =~ m/\.[sS]$/) { $suffix = "o"; }
+				else { $suffix = "obj"; }
+
+				$tempstp =~ s/\.[cSs]$//;
+				$contents .= "\n\$(.path.obj)${tempstp}.$suffix :\t${temp}";
+				$contents .= &mdm_build_depend ($root_dir, $this_file);
+				$contents .= "\n#\n";
+			}
+		}
+		else {
+#			$contents .= "\n# Empty\n";
+		}
+#		if ($contents ne $orig_contents) {
+		if (1) {
+#			print "Modifying";
+			if (open (FILE, ">${file}")) {
+				print FILE $contents;
+				close (FILE);
+			}
+			else {
+				die "makedep could not open output file ${file}\n";
+			}
+		}
+	}
+	else {
+		die "makedep could not open input file ${file}\n";
+	}
+	print "\n";
+}

@@ -1,0 +1,261 @@
+#!/usr/bin/perl
+#use vocal;
+BEGIN {
+	push (@INC, "local", "../local", "w:/utility/tools", "c:/apps/bin");
+	require vocal; import vocal;
+
+	# dredge out the OS type for later use
+	# win9x based OS returns "" , nt based returns "Windows_NT", linux returns linux-gnu
+	$os_name = $ENV{OS};
+	if($os_name eq "") {
+		# if this isnt working on your linux system you might have to export OSTYPE
+		$os_name = $ENV{OSTYPE};
+	}
+	if($os_name eq "") {
+		# if this isnt working on your linux system you might have to export OSTYPE
+		# print "\n(If running under linux, make sure you have OSTYPE exported)";
+		$os_name = "Windows_98";
+	}
+	# print "\nGot os type $os_name.\n";
+}
+
+BEGIN {
+	if($os_name eq "linux-gnu") {
+		require Cwd; import Cwd;
+	}
+	elsif($os_name eq "linux") {
+		require Cwd; import Cwd;
+	}
+	elsif($os_name eq "cygwin") {
+		#
+	}
+	else {
+		*{"main::getcwd"} = \&{"Dos::GetCwd"}; # for djgpp version, use below otherwise
+	}
+}
+
+sub usage
+{
+	my ($retval) = @_;
+	print "Usage: perl mkataoff.prl\n";
+
+	exit ($retval);
+}
+
+# prepare weaklist so we can ignore vars we don't need
+open (WEAKLIST, "../data/weak.cat") || open (WEAKLIST, "data/weak.cat") || print "pp1acode.prl: FAILED opening weak.cat";
+while (<WEAKLIST>) {
+#	print STDERR ".";
+	next unless m/([a-zA-Z_0-9]+):([12])/;
+	$found_var{$1} = $2;
+}
+close(WEAKLIST);
+
+
+undef $/; # slurp entire files
+&set_print_debug_level (0);
+
+# Get current date/time
+($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+$current_date = sprintf ("%02u/%02u/%04u", $mon + 1, $mday, $year + 1900);
+$current_time = sprintf ("%02u:%02u:%02u", $hour, $min, $sec);
+
+# Setup constants
+$comment_line = "/* ************************************************************************* */";
+
+if($os_name eq "cygwin") {
+	$this_dir = `pwd`; chop $this_dir;
+} else {
+	$this_dir = main::getcwd;
+}
+
+if (-f "$this_dir/makefile.inc") {
+	$root_path = "\.";
+} else {
+	$root_path = "\.\.";
+}
+#	print " this dir is $this_dir\n";
+#	print " root_path is $root_path\n";
+
+# Process options
+$cplus_mode = 0;
+$local_var_mode = 0;
+
+$infile = "";
+$outfile = "";
+
+while($ARGV[0]){
+	if  ($ARGV[0] =~ m/^-(\S+)/) {
+		$arg = shift;
+		if ($arg =~ m/^-h/i) {
+			&usage (0);
+		}
+		else {
+			print STDERR "Unrecognized flag \"$arg\"\n\n";
+		}
+	} else {
+		if ($outfile ne "") {
+			next;
+		}
+		if ($infile ne "") {
+			$outfile = shift;
+			print STDERR "mkataoff.prl - output file: $outfile\n";
+			next;
+		}
+		$infile = shift;
+		print STDERR "mkataoff.prl - input file: $infile\n";
+	}
+}
+# load options, reconfig and test.h for stripping of atapages.c
+$options_path = sprintf ("%s/include/options.h", $root_path);
+open (FILE, $options_path) || die "could not open $options_path";
+$options_contents = <FILE>;
+close (FILE);
+&load_options ($options_contents);
+
+$reconfig_path = sprintf ("%s/include/reconfig.h", $root_path);
+open (FILE, $reconfig_path)  || die "could not open $reconfig_path";
+$reconfig_contents = <FILE>;
+close (FILE);
+&load_options ($reconfig_contents);
+
+$options_path = sprintf ("%s/include/test.h", $root_path);
+open (FILE, $options_path)  || die "could not open $options_path";
+$test_contents = <FILE>;
+close (FILE);
+&load_options ($test_contents);
+
+$atapages_path = sprintf ("%s\/%s", $root_path, $infile);
+open (FILE, $atapages_path) || die "could not open $atapages_path";
+$atapages_contents = <FILE>;
+close (FILE);
+
+&clear_options ();
+&load_options ($options_contents);
+&load_options ($contents);
+&load_options ($test_contents);
+
+&print_debug (1, "options all loaded\n");
+
+&strip ($atapages_contents, "uu", "ii");
+
+#print $atapages_contents;
+
+
+	$PARM_PAGE_RE = qr"PARM_PAGE\s*\([^\)]+\)";
+	$STRUCT_PAGE_RE = qr"STRUCT_PAGE\s*\([^\)]+\)";
+	$HEADING_ENTRY_RE = qr"[A-Z]_HEADING_ENTRY.*$";
+	$LINE_RE = qr"^[ \t]+[A-Z]\s+\(.*$";
+	$TABLE_BRK_RE = qr"W_TABLE_BRK_ENTRY[^\)]+\)";
+	$W_END_RE = qr"W_END[^\)]+\)";
+
+@linelist = ($atapages_contents =~ m/$PARM_PAGE_RE|$STRUCT_PAGE_RE|$HEADING_ENTRY_RE|$LINE_RE|$TABLE_BRK_RE|$W_END_RE/gm);
+
+	$inpage = FALSE;
+	$current_page = "";
+	$page_index = 0;
+
+	$hfile_contents = "\n";
+
+foreach $line (@linelist) {
+
+	# start of page
+	if ($line =~ m/$PARM_PAGE_RE|$STRUCT_PAGE_RE/) {
+		$line =~ m/\(\s*(.*)\s*\)/;
+		$inpage = TRUE;
+		$current_page = $1;
+		$page_index = 0;
+		&print_debug (1, "PAGE: [%s]\n", $current_page);
+		next;
+	}
+
+	# end of page
+	if ($line =~ m/$W_END_RE/) {
+		$inpage = FALSE;
+		$current_page = "";
+		$page_index = 0;
+		next;
+	}
+
+	# heading or break
+	if ($line =~ m/$HEADING_ENTRY_RE|$TABLE_BRK_RE/) {
+		&print_debug (1, $line . "\n");
+		$page_index++;
+		next;
+	}
+
+	# line
+	if ( $line =~ m/$LINE_RE/) {
+		if ($inpage eq TRUE) {
+
+			if ($line =~ m/offsetof[ \t]*\(([^\)]*) *, *([^\)]*)\)/) {
+					$parm = "$1__$2";
+					$parm =~ s/struct //;
+#					$parm =~ s/^[ \t]*\b(*)\b[ \t]*/;
+#					print "[$parm]\n";
+					$parm =~ s/\[([0-9]*)\]/_$1/;
+				# only store the first instance of any parm, ignore the rest
+				if ($parm_hash{$parm} ne TRUE) {
+					if ($found_var{$parm} eq "1") {
+#						print STDERR "ignoring weak $parm\n";
+						next;
+					}
+					&print_debug (1, "$current_page $page_index  = $parm\n");
+					# create string for hfile:
+					# EG. #define WI__parm__ipbx_initial_dial_tone	parm__regionalization_page[1]
+					$tempstring = "#define WI__$parm ";
+					$hfile_contents .= $tempstring;
+					$hfile_contents .= " " x (65 - length($tempstring));
+					$hfile_contents .= "$current_page \[$page_index\]\n";
+					$parm_hash{$parm} = TRUE;
+				}
+			}
+			# if it is a non offsetof type line
+			elsif ($line =~ m/^[ \t]+[A-Z]\s+\(\"[^\"]+\"[ ,\t&]+([_a-zA-Z0-9]+)/) {
+				$parm = $1;
+				# only store the first instance of any parm, ignore the rest
+				if ($parm_hash{$parm} ne TRUE) {
+					if ($found_var{$parm} eq "1") {
+#						print STDERR "ignoring weak $parm\n";
+						next;
+					}
+					&print_debug (1, "$current_page $page_index  = $parm\n");
+					# create string for hfile:
+					# EG. #define WI__parm__ipbx_initial_dial_tone	parm__regionalization_page[1]
+					$tempstring = "#define WI__$parm ";
+					$hfile_contents .= $tempstring;
+					$hfile_contents .= " " x (65 - length($tempstring));
+					$hfile_contents .= "$current_page \[$page_index\]\n";
+					$parm_hash{$parm} = TRUE;
+				}
+			} else {
+					&print_debug (0, "mkataoff.prl MISPARSE $line\n");
+			}
+
+			$page_index++;
+		} else {
+			$line =~ m/^[ \t]+[A-Z]\s+\("\w+\"[ ,\t]+([&_a-zA-Z0-9]+)/;
+			&print_debug (1, "sKIPPING $current_page $page_index  = $parm\n");
+		}
+		next;
+	}
+
+}
+
+#remove old file body and replace with new
+$out_path = sprintf ("%s/$outfile", $root_path);
+open (FILE,"<$out_path") || die "cound not open $out_path";
+$file_contents = <FILE>;
+close (FILE);
+
+if (!($file_contents =~ m|\n/\*\- AUTOGEN Begin \-\*/|)) {
+	print "failed finding AUTOGEN Begin in file $filename <mkataoff.prl>\n";
+	exit;
+}
+
+if ($file_contents =~ s|(\n/\*\- AUTOGEN Begin \-\*/)([\s\S]*)(/\*\- AUTOGEN End \-\*/\C?\n)|\1\n$hfile_contents\n\3|) {
+	open (FILE,">$out_path");
+	print FILE $file_contents;
+	close (FILE);
+#    			print $file_contents;
+}

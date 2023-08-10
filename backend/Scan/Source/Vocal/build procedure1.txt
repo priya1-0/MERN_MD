@@ -1,0 +1,36 @@
+Building 55x build
+--------------------------------------------------------
+
+In order to build the 55x code, use the following commands
+
+gmake subs			- compiles code
+gmake all			- links code
+
+It can be done as: gmake subs all
+
+after the first build:
+
+if you only change a single file, you can:
+
+	 change to that directory
+	 type gmake
+	 change back to root of tree
+	 type gmake
+
+our source tree needs to be in a path that has 8.3 naming - eg.
+
+c:\vocal\mst225r3\  is OK
+c:\programfiles\mst225r3\ is NOT ok
+
+this can be aleviated by moving gmake to somewhere in the path that does not have 
+long file names, since it is only gmake that seems to have trouble, but we recomend keeping
+the whole try in such a path to be safe.
+
+
+The following items need to be added to the environment.
+They can be set from a batchfile before startign to build
+
+set path=c:\ti\c5500\cgtools\bin;..;.\local;..\local;%PATH%
+set INCTI=c:\ti\c5500\cgtools\include -ic:\ti\c5500\bios\include
+set LIBTI=c:\ti\c5500\cgtools\lib
+set DIRTI=c:\ti

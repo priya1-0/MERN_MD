@@ -1,0 +1,41 @@
+#	weaklist.prl - usg. weaklist.prl
+#   creates data/weak.cat - a list of all variables available and which are used
+#	1 available but not used
+#	2 available and used
+#
+BEGIN {
+	# modifies search path
+	push (@INC, "local", "../local");
+	# imports vocal perl module
+	require vocal; import vocal;
+}
+
+
+	open (XREFLIST, "data/xref.cat") || print "weaklist.prl: FAILED opening xref.cat";
+	while (<XREFLIST>) {
+		next unless s/^(.*?):\s*//;
+		$found_var{$1} = $1;
+	}
+	close(XREFLIST);
+
+
+	open (FULLLIST, "data/databld.ful") || print "weaklist.prl: FAILED opening databld.ful";
+	while (<FULLLIST>) {
+		$cur_var = $_;
+		chomp($cur_var);
+		if ($found_var{$cur_var}) {
+			# var is used
+#			print $cur_var;
+			$exists_var{$cur_var} = 2;
+		} else {
+			# var is not used but exists
+			$exists_var{$cur_var} = 1;
+		}
+	}
+	close(FULLLIST);
+
+	open (WEAKLIST, ">data/weak.cat") || return print "\nweaklist.prl: FAILED opening weak catalog file\n";
+	foreach $var (keys %exists_var) {
+		print WEAKLIST "$var:$exists_var{$var}\n";
+	}
+	close (WEAKLIST);

@@ -1,0 +1,14 @@
+binmode STDOUT;
+
+#$line = <STDIN>;
+#$line = <STDIN>;
+
+while ($line = <STDIN>) {
+	if ($line =~ m/\$/) {
+		$line = "";
+	}
+	while ($line =~ s/[0-9A-F][0-9A-F]//) {
+		$val = hex($&);
+		print pack ("c", $val);
+	}
+}

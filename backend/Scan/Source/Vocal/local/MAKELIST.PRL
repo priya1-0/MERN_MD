@@ -1,0 +1,319 @@
+#!/usr/bin/perl
+
+BEGIN {
+	push (@INC, "local", "../local"); # where to find vocal.pm
+	require vocal; import vocal;
+}
+
+sub usage
+{
+	my ($retval) = (@_);
+	print "Usage: perl makelist.prl <options file> <link rsp file> <output file>\n";
+	exit ($retval);
+}
+
+
+$opt__ignore_missing_files = 1;
+
+while ($ARGV[0] =~ m/^-(\S+)/) {
+	$arg = shift;
+	if (0) {}
+
+	elsif ($arg =~ m/^-im$/i) { $opt__ignore_missing_files = 0; }
+	elsif ($arg =~ m/^-d(\d*)$/i) {
+		$val = ($1) ? $1 : 1;
+		&set_print_debug_level ($val);
+	}
+	elsif ($arg =~ m/^-h/i)  { &usage (0); }
+	else {
+		print STDERR "Unrecognized flag\n\n";
+		&usage (1);
+	}
+}
+
+
+if ($#ARGV != 2) {
+	&usage (1)
+}
+
+undef $/;
+
+$optfile = shift;
+$linkrspfile = shift;
+$outfile = shift;
+
+#&load_options_file ($optfile, "ii");
+#
+open (FILE, "arch/mst_link.src") || die "Could not open arch/mst_link.src";		#master
+#open (FILE, "arch/mdm_link.src") || die "Could not open arch/mdm_link.src";	#mdm
+$linkrsp__contents = <FILE>;
+close (FILE);
+
+&load_options_file ("include/options.h");
+&load_options_file ("include/reconfig.h");
+&load_options_file ("include/test.h");
+&set_options ("notdef",			"u",
+			  "NOTDEF",			"u",
+			  "NOT_USED",		"u");
+&strip ($linkrsp__contents, "ii", "uu");
+
+$linkrsp__contents =~ s!/\*.*?\*/!!g;
+$linkrsp__contents =~ s!\s*\n\s*!\n!g;
+
+@linkrsp__lines = split (/\n/, $linkrsp__contents);
+
+#@modulelist = ($linkrsp__contents =~ m/^link[\/\\]([^\/\\]+)[\/\\]([^\s]+)/gm);
+@modulelist = ($linkrsp__contents =~ m/^link[\/\\]([^\/\\]+)[\/\\]([^\s]+)/gm);
+@archlist = ($linkrsp__contents =~ m/^-a arch[\/\\](\S*)/gm);
+@exelist = ($linkrsp__contents =~ m/^-e exe[\/\\](\S*)/gm);
+
+foreach $temp (@archlist) {
+	$archhash {$temp} = 1;
+}
+
+foreach $temp (@exelist) {
+	$exehash {$temp} = 1;
+}
+
+while (($dir, $file) = splice (@modulelist, 0, 2)) {
+	$wholefile = "${dir}/${file}";
+#	print STDERR "\n$wholefile\t";
+#	next unless -f $wholefile;
+	next unless (-f $wholefile || $opt__ignore_missing_files);
+#	print STDERR "$wholefile";
+
+	$modhash {$dir} = 1;
+	$wholefile =~ s/\.([cSs])//;
+	if ($1 eq "c") {
+		$chash {$dir} .= "${file},";
+	}
+	elsif (($1 eq "s") || ($1 eq "S")) {
+		$shash {$dir} .= "${file},";
+	}
+}
+
+open (OUTFILE, ">${outfile}") || die "Could not create ${outfile}";
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__MODLIST;
+
+## ######################################################################### ##
+##
+## Automatically generated lists included by makefiles
+##
+## ######################################################################### ##
+
+# ########################################################################### #
+#
+# Build source subdirectories
+#
+
+MODLIST\t\t= \\
+PRT__MODLIST
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $temp (sort keys (%modhash)) {
+	print OUTFILE "\t\t\t$temp \\\n";
+}
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__ARCHLIST;
+
+# ########################################################################### #
+#
+# Build architecture files
+#
+
+ARCHLIST\t= \\
+PRT__ARCHLIST
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $temp (sort keys %archhash) {
+	print OUTFILE "\t\t\t${temp} \\\n";
+}
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__OVLLIST;
+
+# ########################################################################### #
+#
+# Overlay list
+#
+
+OVERLAY_LIST\t= \\
+PRT__OVLLIST
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $temp (sort keys %exehash) {
+	print OUTFILE "\t\t\t${temp} \\\n";
+}
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__MODFILELIST;
+
+# ########################################################################### #
+#
+# Module file lists
+#
+PRT__MODFILELIST
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $temp (sort keys (%chash)) {
+	$mod = lc ($temp);
+	@files = split (/,/, $chash {$temp});
+
+	print OUTFILE "\nMODULE_CLIST.${mod}\t= \\\n";
+	undef %temphash;
+	foreach $temp2 (sort @files) {
+		next if $temp2 eq "";
+		$temphash {$temp2} = 1;
+	}
+
+	foreach $temp2 (sort keys %temphash) {
+		$temp2 =~ s/\.[sc]$//;
+		print OUTFILE "\t\t\t${temp2} \\\n";
+	}
+}
+
+foreach $temp (sort keys (%shash)) {
+	$mod = lc ($temp);
+	@files = split (/,/, $shash {$temp});
+
+	print OUTFILE "\nMODULE_SLIST.${mod}\t= \\\n";
+	undef %temphash;
+	foreach $temp2 (sort @files) {
+		next if $temp2 eq "";
+		$temphash {$temp2} = 1;
+	}
+
+	foreach $temp2 (sort keys %temphash) {
+		$temp2 =~ s/\.[cSs]$//;
+		print OUTFILE "\t\t\t${temp2} \\\n";
+	}
+}
+
+# ########################################################################### #
+# ########################################################################### #
+
+open (OPTIONS_H, $optfile) || die "Could not open ${arg0}";
+$options__contents = <OPTIONS_H>;
+close (OPTIONS_H);
+
+@config_lines = ($options__contents =~ m/^\/\*\+\*\/\s+\/\*\|(.*)\*\/\C?$/gm);
+foreach $line (@config_lines) {
+	undef @letters;
+	@letters = split (/  ?/, $line);
+	for ($i = 0; $i <= $#letters; $i++) {
+		$config_names [$i] .= $letters [$i];
+#		print STDERR "\nConfig Name:".$config_names [$i];
+	}
+}
+
+if ($options__contents =~ m/\/\*\s*Configuration:\s*(\w+)\s*\((Customer|VOCAL|VOCAL|PERALADA)\)\s*\*\//) {
+	$config = lc ($1);
+	$type = lc($2);
+}
+
+open (RECONFIG_H, "include/reconfig.h") || die "Could not open ${arg0}";
+$reconfig__contents = <RECONFIG_H>;
+close (RECONFIG_H);
+
+@reconfig_lines = ($reconfig__contents =~ m/^\/\*\+\*\/\s+\/\*\|(.*)\*\/\C?$/gm);
+foreach $line (@reconfig_lines) {
+	undef @letters;
+	@letters = split (/  ?/, $line);
+	for ($i = 0; $i <= $#letters; $i++) {
+		$reconfig_names [$i] .= $letters [$i];
+#		print STDERR "\nConfig Name:".$reconfig_names [$i];
+	}
+}
+
+if ($reconfig__contents =~ m/\/\*\s*Configuration:\s*(\w+)\s*\((Customer|VOCAL|VOCAL|PERALADA)\)\s*\*\//) {
+	$reconfig = lc ($1);
+	$reconfig_type = lc($2);
+}
+
+# ########################################################################### #
+# ########################################################################### #
+
+&strip ($options__contents, "uu", "ii");
+&strip_options ($options__contents);
+
+&strip ($reconfig__contents, "uu", "ii");
+&strip_options ($reconfig__contents);
+
+$combined__contents = $options__contents.$reconfig__contents;
+
+#@defined_options = ($options__contents =~ m/\n\#define[ \t]+(\w+)/g);
+@defined_options = ($combined__contents =~ m/\n\#define[ \t]+(\w+)/g);
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__CONFIG;
+
+# ########################################################################### #
+#
+# Configurations
+#
+
+CURRENT_CONFIG = $config
+TYPE = $type
+
+CONFIG_LIST\t= \\
+PRT__CONFIG
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $cfg (sort @config_names) {
+	print OUTFILE "\t\t\t" . lc ($cfg) . " \\\n";;
+}
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__RECONFIG;
+
+# ########################################################################### #
+#
+# Reconfigurations
+#
+
+CURRENT_RECONFIG = $reconfig
+RECONFIG_TYPE = $reconfig_type
+
+RECONFIG_LIST\t= \\
+PRT__RECONFIG
+# ########################################################################### #
+# ########################################################################### #
+
+foreach $cfg (sort @reconfig_names) {
+	print OUTFILE "\t\t\t" . lc ($cfg) . " \\\n";;
+}
+
+# ########################################################################### #
+# ########################################################################### #
+print OUTFILE <<PRT__OPTIONS;
+
+# ########################################################################### #
+#
+# Options list
+#
+
+PRT__OPTIONS
+# ########################################################################### #
+# ########################################################################### #
+
+$prev = "";
+foreach $opt (sort @defined_options) {
+	if ($prev ne $opt) {
+		print OUTFILE "${opt} = TRUE\n";
+		$prev = $opt;
+	}
+}

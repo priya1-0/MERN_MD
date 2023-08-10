@@ -1,0 +1,178 @@
+
+## ######################################################################### ##
+##
+## Automatically generated lists included by makefiles
+##
+## ######################################################################### ##
+
+# ########################################################################### #
+#
+# Build source subdirectories
+#
+
+MODLIST		= \
+			csc \
+			customer \
+			dev \
+			ip \
+			lansend \
+			net \
+			support \
+			sys \
+			term \
+			utils \
+			wan \
+
+# ########################################################################### #
+#
+# Build architecture files
+#
+
+ARCHLIST	= \
+
+# ########################################################################### #
+#
+# Overlay list
+#
+
+OVERLAY_LIST	= \
+
+# ########################################################################### #
+#
+# Module file lists
+#
+
+MODULE_CLIST.csc	= \
+			itel \
+
+MODULE_CLIST.customer	= \
+			cx077a \
+			netdump \
+
+MODULE_CLIST.dev	= \
+			dev \
+			devcmd \
+			devmdm \
+			devparam \
+			iface \
+			mdmcmd \
+
+MODULE_CLIST.ip	= \
+			domain \
+			domhdr \
+			icmp \
+			icmpcmd \
+			icmphdr \
+			icmpmsg \
+			ip \
+			ipcmd \
+			iphdr \
+			iproute \
+			ipsock \
+			tcpcmd \
+			tcphdr \
+			tcpin \
+			tcpout \
+			tcpsock \
+			tcpsubr \
+			tcptimer \
+			tcpuser \
+			udp \
+			udpcmd \
+			udphdr \
+			udpsock \
+
+MODULE_CLIST.lansend	= \
+			account \
+			commands \
+			config \
+			debug \
+			main \
+			test \
+			view \
+
+MODULE_CLIST.net	= \
+			af \
+			locsock \
+			net \
+			netuser \
+			route \
+			sockcmd \
+			socket \
+			sockuser \
+			sockutil \
+
+MODULE_CLIST.support	= \
+			network \
+			print \
+			serial \
+			support \
+			time \
+
+MODULE_CLIST.sys	= \
+			alloc \
+			cmdparse \
+			files \
+			filesys \
+			getopt \
+			kernel \
+			ksubr \
+			mbuf \
+			misc \
+			pathname \
+			serial \
+			session \
+			stdio \
+			string \
+			sys \
+			ti \
+			timer \
+			ttydrvr \
+
+MODULE_CLIST.term	= \
+			term \
+
+MODULE_CLIST.utils	= \
+			httpcli \
+			ping \
+			utils \
+
+MODULE_CLIST.wan	= \
+			ppp \
+			pppchap \
+			pppcmd \
+			pppfsm \
+			pppipcp \
+			ppplcp \
+			ppppap \
+			slhc \
+			wan \
+
+# ########################################################################### #
+#
+# Configurations
+#
+
+CURRENT_CONFIG = 
+TYPE = 
+
+CONFIG_LIST	= \
+
+# ########################################################################### #
+#
+# Reconfigurations
+#
+
+CURRENT_RECONFIG = 
+RECONFIG_TYPE = 
+
+RECONFIG_LIST	= \
+
+# ########################################################################### #
+#
+# Options list
+#
+
+DO_PARTIAL_SOURCE = TRUE
+_INCLUDE_OPTIONS_H = TRUE
+_INCLUDE_RECONFIG_H = TRUE
